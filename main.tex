@@ -1,0 +1,91 @@
+\documentclass{article}
+
+% ICML 2025 template
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\makeatletter
+\def\input@path{{ICML2025_Template/}}
+\makeatother
+\usepackage{icml2025}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{url}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{xcolor}
+
+\newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
+
+\icmltitlerunning{Selective Consistency Training with Reinforcement Learning}
+
+\begin{document}
+
+\twocolumn[
+\icmltitle{Selective Consistency Training with Reinforcement Learning}
+
+% Keep real authors here; ICML style anonymizes them unless [accepted] is used.
+\begin{icmlauthorlist}
+\icmlauthor{Sohaib Imran}{b}
+\icmlauthor{Prakhar Gupta}{c}
+\icmlauthor{Jannes Elstner}{e}
+\icmlauthor{David Africa}{f}
+\end{icmlauthorlist}
+
+\icmlaffiliation{b}{Lancaster University}
+\icmlaffiliation{c}{University of Michigan}
+\icmlaffiliation{e}{Apollo Research}
+\icmlaffiliation{f}{UK AI Security Institute}
+
+\icmlcorrespondingauthor{Sohaib Imran}{sohaibimran7@gmail.com}
+
+\icmlkeywords{Reinforcement Learning, Consistency Training, Robustness}
+
+\vskip 0.3in
+]
+
+\printAffiliationsAndNotice{}
+
+\begin{abstract}
+Write abstract.
+\end{abstract}
+
+\section{Introduction}
+
+\subsection{Relavant Pathologies}
+\subsection{Why Consistency Training}
+\subsection{Summary of contributions}
+
+\section{Consistency Training}
+
+\subsection{Existing methods}
+\subsubsection{Bias-Augmented Consistency Training}
+\subsubsection{Activation Consistency Training}
+
+\subsection{Existing Applications}
+Sycophancy, jailbreaks, what else?
+
+
+
+\subsection{Novel applications enabled by selective consistency training}\label{sec:novel-applications}
+Argue that non-selective methods like BCT and ACT enforce consistency over the entire output, incentivising models to suppress acknowledgement of the perturbation rather than reason through it. Connect to eval awareness literature.
+
+\section{Reinforcement Learning Consistency Training}
+Introduce RLCT. Key idea: reward function enforces consistency only over properties of the output where consistency is desired, leaving other parts free to vary. Describe reward design. Brief discussion of properties we expect of RLCT. 
+
+\section{Experiments}
+The sycophancy environment, bias types, metrics (BIR, BAR), baselines (BCT, ACT, base model), Models, results.
+
+\section{Discussion}
+Interpret results. Limitations. Future directions (multimodal consistency, application to eval gaming and other settings described in Section~\ref{sec:novel-applications}).
+
+\section{Conclusion}
+Summarise.
+
+\bibliography{references, ai_safety}
+\bibliographystyle{ICML2025_Template/icml2025}
+
+\end{document}

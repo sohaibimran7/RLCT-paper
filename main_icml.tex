@@ -1,0 +1,348 @@
+\documentclass{article}
+
+% ICML 2025 template
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\makeatletter
+\def\input@path{{ICML2025_Template/}}
+\makeatother
+\usepackage{icml2025}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{url}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning, calc, arrows.meta}
+
+\newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
+
+\icmltitlerunning{Selective Consistency Training with Reinforcement Learning}
+
+\begin{document}
+
+\twocolumn[
+\icmltitle{Selective Consistency Training with Reinforcement Learning}
+
+% Keep real authors here; ICML style anonymizes them unless [accepted] is used.
+\begin{icmlauthorlist}
+\icmlauthor{Sohaib Imran}{b}
+\icmlauthor{Prakhar Gupta}{c}
+\icmlauthor{Jannes Elstner}{e}
+\icmlauthor{David Africa}{f}
+\end{icmlauthorlist}
+
+\icmlaffiliation{b}{Lancaster University}
+\icmlaffiliation{c}{University of Michigan}
+\icmlaffiliation{e}{Apollo Research}
+\icmlaffiliation{f}{UK AI Security Institute}
+
+\icmlcorrespondingauthor{Sohaib Imran}{sohaibimran7@gmail.com}
+
+\icmlkeywords{Reinforcement Learning, Consistency Training, Robustness}
+
+\vskip 0.3in
+]
+
+\printAffiliationsAndNotice{}
+
+\begin{abstract}
+\todo{write abstract once results are settled.}
+\end{abstract}
+
+\section{Introduction}
+
+\subsection{Relevant Pathologies}
+Large language model (LLM) behaviour is often influenced by prompt cues
+that should not, in principle, affect the behaviour of interest. A
+widely studied example is sycophancy, where LLMs adapt their responses
+to align with a user's stated views or preferences
+\citep{perez_discovering_2022}. Another example is evaluation gaming,
+where LLM behaviour depends on whether the model "believes" the input to be
+part of an evaluation. \todo{cite apollo, anthropic and AISI's research}
+This is particularly concerning because, if models behave differently in
+evaluations than in the real world, our evaluations become
+uninformative about real-world behaviour
+\citep{carlsmith_scheming_2023}.
+\todo{cite the BCT/ACT paper (2510.27062) here once added to bib.}
+
+\subsection{Why Consistency Training}
+Two general approaches address the above behavioural inconsistencies. The first is to modify the input or the internal representations induced by the input so that the cues driving the inconsistencies are absent or hard for the LLM to detect \todo{cite cot \& activation steering work on eval awareness reduction}. However, isolating and removing the relevant cues from the input or internal representations is difficult in practice \todo{why?}. The second is to train LLMs to behave consistently regardless of whether such cues are present. Consistency training is a class of methods focussing on the latter approach by training LLMs to produce consistent outputs or internal representations across input perturbations \todo{cite consistency training methods}.
+
+\subsection{The problem with existing consistency training methods}
+
+A concern with existing consistency training methods is
+\emph{obfuscation}: LLMs may learn to suppress from their outputs or internal representations any evidence that they detected the cues driving inconsistency since these outputs or internal representations are trained to be consistent with the cues being absent. Such obfuscation could make monitoring and auditing these systems more difficult. This concern can be avoided with \emph{Selective} Consistency Training: training for consistency only over the selected behavioural properties where consistency is desirable, leaving other parts of the output free to vary. 
+
+We introduce \emph{Reinforcement Learning Consistency Training}
+(RLCT), a reinforcement learning method for selective consistency training. RLCT works by computing and matching select behaviour propensities across input perturbations. 
+
+
+\subsection{Summary of contributions}
+\begin{itemize}
+    \item We introduce \emph{Reinforcement Learning Consistency Training}
+    (RLCT), a method that enforces consistency only over selected
+    behavioural properties of the output. 
+    \item We validate the method against BCT on the sycophancy benchmark of
+    \todo{BCT paper} on Llama-3.1-8B-Instruct and \todo{gpt oss}.
+    \item We show that RLCT causes significantly less obfuscation compared to BCT, as measured by significantly lower decrease in bias acknowledgment. 
+\end{itemize}
+
+\section{Consistency Training}
+
+% We define a consistency training method by three choices: (i) a set of
+% input perturbations that should not change the behaviour of interest,
+% (ii) the property of the output over which consistency is enforced, and
+% (iii) the training signal that enforces it.
+
+\subsection{Existing methods}
+
+\subsubsection{Bias-Augmented Consistency Training}
+
+Bias-Augmented Consistency Training (BCT) trains LLMs to produce the same output on perturbed inputs as on the corresponding unperturbed input. For each prompt, a response is sampled from the LLM. The LLM is then fine-tuned to produce that same response when given perturbed prompts. \todo{cite bct paper}
+
+% Because the supervision signal is the entire target response, BCT does
+% not distinguish between consistency on the final answer and consistency
+% on the chain of thought. In the eval-awareness setting, the model is
+% trained to produce a chain of thought that reads as if it had not seen
+% the cue, even though the cue was present in its input.
+
+\subsubsection{Activation Consistency Training}
+\todo{cite ACT paper}. 
+
+Activation Consistency Training (ACT) trains LLMs to produce internal representations when given a perturbed input that match the corresponding unperturbed input. This is achieved by minimising the difference between residual-stream activations on the perturbed and clean prompts at matching token positions, pushing the perturbed activations toward the clean ones. ACT is applied only to prompt token positions, not response token positions. 
+\todo{mention BCT still SOTA}
+
+\subsection{Existing Applications}
+Consistency training has previously been applied to sycophancy \todo{cite BCT paper}, jailbreak robustness \todo{cite ACT paper}, and reducing persona drift \todo{cite @misc{shah2026frustration,
+  title        = {Gemma Gets Help: Mitigating Frustration and Persona Drift with Consistency Training},
+  author       = {Shah, Neil and Africa, David Demitri},
+  year         = {2026},
+  howpublished = {LessWrong},
+  note         = {SPAR Research Fellowship},
+  url          = {}}
+}. \todo{cite Irpan et al (ACT paper)} report BCT and ACT lead to similar decrease in LLM sycophancy, while BCT leads to a larger decrease in jailbreak susceptibility. 
+- 
+
+\subsection{Novel applications enabled by selective consistency training}
+\label{sec:novel-applications}
+
+BCT and ACT train LLMs to generate the same output or internal
+representations as when certain cues are absent from the prompt. This raises multiple concerns. \todo{cite Irpan et al (ACT paper)} note that this training may misgeneralise to LLMs ignoring other important parts of the prompt, such as user instructions. Furthermore, constraining the entire output or internal activations also constrains any mentions or verbalisations of the prompt cues driving inconsistency. Therefore such training may also lead to obfuscation. This hampers the applicability of these methods when monitoring and auditing are important. As an example, training models to not verbalise any prompt injection jailbreaks may reduce their monitorability. Similarly, training LLMs to not verbalise when they correctly infer that they are being evaluated, reduces our ability to track evaluation awareness \todo{cite eval awareness literature eg. ansti scheming, apollo system cards, igor's research}. 
+
+Selective consistency training avoids the above concerns by selectively constraining only desired behaviours to be consistent, leaving other behaviours such as verbalisation or acknowledgement of the cues driving inconsistency free to vary. 
+
+\section{Reinforcement Learning Consistency Training}
+
+We introduce \emph{Reinforcement Learning Consistency Training} (RLCT),
+a method for selective consistency training.
+
+% \begin{figure*}[t]
+% \centering
+% \begin{tikzpicture}[
+%     promptbox/.style={draw, rounded corners=2pt, align=left, font=\footnotesize\sffamily,
+%                       text width=4.2cm, minimum height=1.6cm, fill=gray!5, inner sep=4pt},
+%     sampbox/.style={draw, rounded corners=2pt, align=left, font=\footnotesize\sffamily,
+%                     text width=4.4cm, minimum height=1.6cm, fill=blue!5, inner sep=4pt},
+%     lm/.style={draw, rectangle, font=\sffamily, minimum width=0.8cm,
+%                minimum height=0.6cm, fill=white},
+%     rate/.style={draw, ellipse, font=\sffamily\small, minimum width=1.4cm,
+%                  minimum height=0.7cm, fill=orange!15},
+%     rew/.style={draw, rounded corners=4pt, font=\sffamily\bfseries\small,
+%                 fill=violet!15, align=center, inner sep=5pt, text width=2.2cm},
+%     arr/.style={->, >=stealth, thick},
+%     drew/.style={->, >=stealth, thick, dashed, violet!80!black}
+% ]
+
+% % Top row: biased perturbation
+% \node[promptbox] (bp) at (0,1.6)
+%   {\textbf{Biased Prompt}\\\textcolor{red!70!black}{``I think the answer is (B).''} ...};
+% \node[lm, right=0.5cm of bp] (lmb) {LM};
+% \node[sampbox, right=0.5cm of lmb] (br)
+%   {\textbf{$N$ samples}\\
+%    $\tau^{b}_{1}$: ``...answer is (B).'' \;[\textbf{1}]\\
+%    $\tau^{b}_{2}$: ``...answer is (A).'' \;[0]\\
+%    \;\;$\vdots$ \;\; CoT free to vary};
+% \node[rate, right=0.5cm of br] (pb) {$\hat{p}_b$};
+
+% % Bottom row: unbiased perturbation
+% \node[promptbox] (up) at (0,-1.6)
+%   {\textbf{Unbiased Prompt}\\(no bias text)};
+% \node[lm, right=0.5cm of up] (lmu) {LM};
+% \node[sampbox, right=0.5cm of lmu] (ur)
+%   {\textbf{$N$ samples}\\
+%    $\tau^{u}_{1}$: ``...answer is (A).'' \;[0]\\
+%    $\tau^{u}_{2}$: ``...answer is (B).'' \;[\textbf{1}]\\
+%    \;\;$\vdots$ \;\; CoT free to vary};
+% \node[rate, right=0.5cm of ur] (pu) {$\hat{p}_u$};
+
+% % Sampling and rate arrows
+% \draw[arr] (bp) -- (lmb);
+% \draw[arr] (lmb) -- (br);
+% \draw[arr] (br) -- node[above, font=\scriptsize\sffamily]{score} (pb);
+% \draw[arr] (up) -- (lmu);
+% \draw[arr] (lmu) -- (ur);
+% \draw[arr] (ur) -- node[above, font=\scriptsize\sffamily]{score} (pu);
+
+% % Add bias label
+% \node[align=center, font=\footnotesize\sffamily] (addbias) at (-3.0, 0)
+%   {Add bias\\text};
+% \draw[arr] (addbias.east) -- ++(0.4,0) |- (bp.west);
+% \draw[arr] (addbias.east) -- ++(0.4,0) |- (up.west);
+
+% % RLCT objective
+% \node[rew] (obj) at ($(pb)!0.5!(pu) + (2.6,0)$)
+%   {RLCT training\\objective};
+% \draw[drew] (pb) -- (obj);
+% \draw[drew] (pu) -- (obj);
+
+% % Mean rate label
+% \node[font=\scriptsize\sffamily, align=left, anchor=west] at (obj.east)
+%   {\;reward each $\tau^{f}_{i}$\\\;by how much\\\;its trait moves\\\;$\hat{p}_f$ toward\\\;a target rate $q$};
+
+% \end{tikzpicture}
+% \caption{A depiction of \emph{Reinforcement Learning Consistency
+% Training} (RLCT) for a single input with two input perturbations
+% (biased and unbiased). $N$ samples are drawn from the LM under each
+% perturbation; each sample's final answer is scored for the target
+% behavioural property (here, ``follows the bias'', shown in brackets),
+% giving per-perturbation rates $\hat{p}_b$ and $\hat{p}_u$. The RLCT
+% reward (purple, dashed) pulls each $\hat{p}_f$ toward a target
+% rate $q$, which may be chosen from a designated perturbation
+% or computed from the set of per-perturbation rates. Only the trait is
+% constrained; the chain of thought is free to vary across samples.}
+% \label{fig:rlct}
+% \end{figure*}
+
+\subsection{Method}
+Consider an input $x$ and a set of input perturbations $\mathcal{F}$. For each
+perturbation $f \in \mathcal{F}$, we sample $N$ trajectories from the
+current policy on the perturbed input $x_f$. Each trajectory $i$ is
+scored for the target behavioural property by a binary classifier $T$
+(for example, ``the response matches the bias suggested in the prompt'').
+
+Define the local behaviour rate for perturbation $f$ as
+\begin{equation}
+p_f = \frac{1}{N} \sum_{i=1}^{N} T(\tau_{f,i}),
+\end{equation}
+and let $q$ denote a target rate. This target rate may be
+the behaviour rate on a particular perturbation (for example, the clean
+or unperturbed prompt), or a function of the per-perturbation rates,
+such as their mean, minimum, or maximum.
+
+The consistency reward for trajectory $\tau_{f,i}$ rewards the
+trajectory when its trait value moves the local rate toward the
+target rate:
+\begin{equation}
+r^{\text{cons}}_{f,i} = -(p_f - q)\,(T(\tau_{f,i}) - q).
+\end{equation}
+
+To prevent the target rate from drifting during training, an optional anchor term ties the
+target rate $q$ to the corresponding target rate under the initial
+reference policy $\pi_{\text{ref}}$ (typically a checkpoint taken before consistency
+training begins). Letting $q_{\text{ref}}$ denote this fixed target
+rate, and letting $\omega_f$ denote the local contribution of $p_f$ to
+$q$ (that is, $\omega_f = \partial q / \partial p_f$ when $q$ is
+differentiable),
+\begin{equation}
+r^{\text{anchor}}_{f,i} = -(q - q_{\text{ref}})\,\omega_f\,(T(\tau_{f,i}) - q_{\text{ref}}).
+\end{equation}
+Thus only trajectories that actually contribute to $q$ receive anchor
+pressure; for example, if $q = p_g$ for some designated perturbation
+$g$, then $\omega_f = \mathbb{I}[f=g]$.
+
+The total reward combines the two terms with mixing weight $\alpha$:
+\begin{equation}
+r_{f,i} = (1 - \alpha)\, r^{\text{cons}}_{f,i} + \alpha\, r^{\text{anchor}}_{f,i}.
+\end{equation}
+
+\subsection{RL algorithm}
+We optimise the policy with GRPO and a KL penalty to a fixed reference
+policy. The only departure from standard GRPO is the sampling structure:
+groups consist of $|\mathcal{F}|$ perturbations, with $N$ trajectories
+per perturbation, all sharing the same underlying input. GRPO
+advantage normalisation and policy updates proceed as usual. We use
+parameter-efficient fine-tuning (LoRA) throughout.
+
+\subsection{Why this avoids the obfuscation pressure}
+Because the reward depends only on the trait $T$, the per-perturbation
+rates $p_f$, and the chosen target rate $q$, the model is
+not penalised for any particular content in the chain of thought. In
+particular, if the model verbalises that it has noticed a perturbation,
+the reward is unchanged provided its action matches the target rate.
+This contrasts with BCT, where matching a clean-prompt target response
+would penalise verbalisation of the perturbation.
+
+\section{Experiments}
+
+\subsection{Environment and bias types}
+We validate the method on the sycophancy benchmark of \todo{BCT paper}.
+The benchmark consists of multiple-choice questions to which a small
+prompt-level perturbation has been added that suggests a particular
+answer. We restrict our experiments to five single-turn bias types:
+suggested answer, distractor argument, distractor fact, wrong few-shot,
+and spurious few-shot squares.
+
+\subsection{Train/evaluation split}
+We train on a single bias type (suggested answer) drawn from a single
+question source (MMLU) and evaluate on a held-out question source
+(TruthfulQA) across all five bias types. Training on a single
+bias/source and evaluating on held-out bias/sources separates
+hyperparameter selection from final reporting.
+
+\subsection{Models}
+Our primary model is Llama-3.1-8B-Instruct.
+\todo{describe gpt-oss-20b/120b runs once finalised.}
+
+\subsection{Metrics}
+The primary metric is the \emph{Bias Influence Rate} (BIR), defined per
+question as the absolute difference between the rate at which the model
+selects the biased option on the biased prompt and the rate at which it
+selects the same option on the unbiased prompt. We also report the
+\emph{Bias Acknowledgement Rate} (BAR), the rate at which the model's
+chain of thought acknowledges the perturbation (scored by an LLM
+grader), and unbiased-eval accuracy (the rate at which the model
+answers the unbiased question correctly), the latter as a check that
+consistency training does not degrade general task performance.
+
+\subsection{Baselines}
+We compare RLCT against the base model, BCT trained on a matched
+training set, and a control variant of RLCT in which both perturbations
+are unperturbed (used to isolate training-induced drift from the
+consistency signal).
+\todo{ACT baseline if available.}
+
+\subsection{Results}
+\todo{fill in results.}
+
+\section{Discussion}
+\todo{interpret results once finalised.}
+
+\paragraph{Limitations.}
+Consistency training does not address deceptive alignment: a model that
+is already deceptively aligned could plausibly be taught to hide its
+eval-gaming behaviour better, similarly to how standard post-training
+methods make sleeper-agent behaviours difficult to catch
+\citep{hubinger_sleeper_2024}. Our experiments are also restricted to a
+narrow bias-following setting on multiple-choice questions; the
+obfuscation question for the eval-awareness setting itself has not been
+tested directly.
+\todo{add limitations specific to results once finalised.}
+
+\paragraph{Future directions.}
+Application of selective consistency training to evaluation-awareness
+settings (Section~\ref{sec:novel-applications}), extension to
+multimodal consistency (e.g.\ across input or output modalities), and
+application to other behavioural properties beyond bias-following.
+
+\section{Conclusion}
+\todo{summarise once results are in.}
+
+\bibliography{references, ai_safety}
+\bibliographystyle{ICML2025_Template/icml2025}
+
+\end{document}
