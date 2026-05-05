@@ -122,84 +122,26 @@ These concerns motivate \emph{selective consistency training}: enforcing consist
 
 \section{Reinforcement Learning Consistency Training}
 
-% \begin{figure*}[t]
-% \centering
-% \begin{tikzpicture}[
-%     promptbox/.style={draw, rounded corners=2pt, align=left, font=\footnotesize\sffamily,
-%                       text width=4.2cm, minimum height=1.6cm, fill=gray!5, inner sep=4pt},
-%     sampbox/.style={draw, rounded corners=2pt, align=left, font=\footnotesize\sffamily,
-%                     text width=4.4cm, minimum height=1.6cm, fill=blue!5, inner sep=4pt},
-%     lm/.style={draw, rectangle, font=\sffamily, minimum width=0.8cm,
-%                minimum height=0.6cm, fill=white},
-%     rate/.style={draw, ellipse, font=\sffamily\small, minimum width=1.4cm,
-%                  minimum height=0.7cm, fill=orange!15},
-%     rew/.style={draw, rounded corners=4pt, font=\sffamily\bfseries\small,
-%                 fill=violet!15, align=center, inner sep=5pt, text width=2.2cm},
-%     arr/.style={->, >=stealth, thick},
-%     drew/.style={->, >=stealth, thick, dashed, violet!80!black}
-% ]
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/rlct_viz.png}
+\caption{\textbf{A depiction of Reinforcement Learning Consistency
+Training (RLCT).} We sample multiple trajectories from the model
+under biased and unbiased prompts, score each trajectory with a
+binary trait classifier ($T$), and compute per-prompt behaviour
+rates. In this simplified two-perturbation case, the unbiased rate
+$p_{\text{unbiased}}$ serves as the target ($q$), and RLCT uses
+GRPO to push $p_{\text{biased}}$ toward $q$. Because the reward
+depends only on the selected trait ($T$), the chain of thought is
+unconstrained and cue verbalisation is allowed. Responses are
+paraphrased for brevity.}
+\label{fig:rlct}
+\end{figure*}
 
-% % Top row: biased perturbation
-% \node[promptbox] (bp) at (0,1.6)
-%   {\textbf{Biased Prompt}\\\textcolor{red!70!black}{``I think the answer is (B).''} ...};
-% \node[lm, right=0.5cm of bp] (lmb) {LM};
-% \node[sampbox, right=0.5cm of lmb] (br)
-%   {\textbf{$N$ samples}\\
-%    $\tau^{b}_{1}$: ``...answer is (B).'' \;[\textbf{1}]\\
-%    $\tau^{b}_{2}$: ``...answer is (A).'' \;[0]\\
-%    \;\;$\vdots$ \;\; CoT free to vary};
-% \node[rate, right=0.5cm of br] (pb) {$\hat{p}_b$};
-
-% % Bottom row: unbiased perturbation
-% \node[promptbox] (up) at (0,-1.6)
-%   {\textbf{Unbiased Prompt}\\(no bias text)};
-% \node[lm, right=0.5cm of up] (lmu) {LM};
-% \node[sampbox, right=0.5cm of lmu] (ur)
-%   {\textbf{$N$ samples}\\
-%    $\tau^{u}_{1}$: ``...answer is (A).'' \;[0]\\
-%    $\tau^{u}_{2}$: ``...answer is (B).'' \;[\textbf{1}]\\
-%    \;\;$\vdots$ \;\; CoT free to vary};
-% \node[rate, right=0.5cm of ur] (pu) {$\hat{p}_u$};
-
-% % Sampling and rate arrows
-% \draw[arr] (bp) -- (lmb);
-% \draw[arr] (lmb) -- (br);
-% \draw[arr] (br) -- node[above, font=\scriptsize\sffamily]{score} (pb);
-% \draw[arr] (up) -- (lmu);
-% \draw[arr] (lmu) -- (ur);
-% \draw[arr] (ur) -- node[above, font=\scriptsize\sffamily]{score} (pu);
-
-% % Add bias label
-% \node[align=center, font=\footnotesize\sffamily] (addbias) at (-3.0, 0)
-%   {Add bias\\text};
-% \draw[arr] (addbias.east) -- ++(0.4,0) |- (bp.west);
-% \draw[arr] (addbias.east) -- ++(0.4,0) |- (up.west);
-
-% % RLCT objective
-% \node[rew] (obj) at ($(pb)!0.5!(pu) + (2.6,0)$)
-%   {RLCT training\\objective};
-% \draw[drew] (pb) -- (obj);
-% \draw[drew] (pu) -- (obj);
-
-% % Mean rate label
-% \node[font=\scriptsize\sffamily, align=left, anchor=west] at (obj.east)
-%   {\;reward each $\tau^{f}_{i}$\\\;by how much\\\;its trait moves\\\;$\hat{p}_f$ toward\\\;a target rate $q$};
-
-% \end{tikzpicture}
-% \caption{A depiction of \emph{Reinforcement Learning Consistency
-% Training} (RLCT) for a single input with two input perturbations
-% (biased and unbiased). $N$ samples are drawn from the LM under each
-% perturbation; each sample's final answer is scored for the target
-% behavioural property (here, ``follows the bias'', shown in brackets),
-% giving per-perturbation rates $\hat{p}_b$ and $\hat{p}_u$. The RLCT
-% reward (purple, dashed) pulls each $\hat{p}_f$ toward a target
-% rate $q$, which may be chosen from a designated perturbation
-% or computed from the set of per-perturbation rates. Only the trait is
-% constrained; the chain of thought is free to vary across samples.}
-% \label{fig:rlct}
-% \end{figure*}
 
 \subsection{Method}
+Figure~\ref{fig:rlct} depicts the method on a single input with two
+perturbations.
 Consider an input $x$. Let $\mathcal{T}$ denote a set of \emph{training}
 perturbations and $\mathcal{A}$ a set of \emph{anchor} perturbations (the two
 sets may overlap), and write $\mathcal{F} = \mathcal{T} \cup \mathcal{A}$ for
