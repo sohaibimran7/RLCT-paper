@@ -1,15 +1,9 @@
-\documentclass{article}
+\documentclass[twocolumn]{article}
 
-% ICML 2025 template
 \usepackage{microtype}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{hyperref}
-\makeatletter
-\def\input@path{{ICML2025_Template/}}
-\makeatother
-\usepackage{icml2025}
-
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{url}
@@ -19,37 +13,28 @@
 \usepackage{xcolor}
 \usepackage{tikz}
 \usetikzlibrary{positioning, calc, arrows.meta}
+\usepackage[margin=1in]{geometry}
+\usepackage{authblk}
+\usepackage{natbib}
 
 \newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
 
-\icmltitlerunning{Reinforcement Learning Consistency Training}
+\title{Reinforcement Learning Consistency Training: Training for Consistency while Mitigating Obfuscation}
+
+\author[1]{Sohaib Imran\thanks{Correspondence: \texttt{s.imran1@lancaster.ac.uk}}}
+\author[2]{Prakhar Gupta}
+\author[3]{Jannes Elstner}
+\author[4]{David Africa}
+\affil[1]{Lancaster University}
+\affil[2]{University of Michigan}
+\affil[3]{Independent\thanks{Now at Apollo Research}}
+\affil[4]{UK AI Security Institute}
+
+\date{}
 
 \begin{document}
 
-\twocolumn[
-\icmltitle{Reinforcement Learning Consistency Training: Training for Consistency while Mitigating Obfuscation}
-
-% Keep real authors here; ICML style anonymizes them unless [accepted] is used.
-\begin{icmlauthorlist}
-\icmlauthor{Sohaib Imran}{b}
-\icmlauthor{Prakhar Gupta}{c}
-\icmlauthor{Jannes Elstner}{e}
-\icmlauthor{David Africa}{f}
-\end{icmlauthorlist}
-
-\icmlaffiliation{b}{Lancaster University}
-\icmlaffiliation{c}{University of Michigan}
-\icmlaffiliation{e}{Independent\protect\footnote{Now at Apollo Research}}
-\icmlaffiliation{f}{UK AI Security Institute}
-
-\icmlcorrespondingauthor{Sohaib Imran}{s.imran1@lancaster.ac.uk}
-
-\icmlkeywords{Reinforcement Learning, Consistency Training, Robustness}
-
-\vskip 0.3in
-]
-
-\printAffiliationsAndNotice{}
+\maketitle
 
 \begin{abstract}
 
@@ -607,8 +592,22 @@ link between behavioural consistency and chain-of-thought content,
 RLCT offers a path to consistency training that does not trade
 behavioural robustness against monitorability.
 
+\section*{Acknowledgments}
+We thank Tim Hua for inspiring this project and Igor Ivanov for
+project management. We also thank Jordan Taylor, James Chua, Daniel Tan,
+and Jasmine Li for helpful discussions that improved this paper. We
+are grateful to Coefficient Giving for funding SI and for providing
+compute, and to the UK AI Security Institute for providing additional
+compute for this research.
+
+\section*{Author contributions}
+JE and SI conceptualised the method. SI implemented and ran the
+majority of the experiments. SI and PG wrote the paper. PG implemented
+the multi-turn biases and conducted hyperparameter tuning. DA
+supervised the project.
+
 \bibliography{references, ai_safety}
-\bibliographystyle{ICML2025_Template/icml2025}
+\bibliographystyle{plainnat}
 
 \appendix
 
