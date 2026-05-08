@@ -94,7 +94,7 @@ where LLM behavior is affected by whether the model infers the input to be part 
 
 \suggestion{Append after the existing eval-gaming sentence: ``Whereas sycophancy responds to cues about the user's stated views or preferences, the cue here is a signal of evaluation context, raising a distinctive concern: if behaviour differs under evaluation versus deployment, our evaluations themselves become uninformative about real-world behaviour \citep{carlsmith_scheming_2023}.'' Names the categorical difference and the distinctive eval-uninformativeness stake.}
 
-One approach to mitigate the behavioural incosistency driven by extraneous input features is to remove these features from the input or the internal representations induced by the input \citep{nguyen_probing_2025, hua_steering_2025}. However, isolating and removing extraneous features from the input or internal representations is difficult in practice: such features are often distributed across many subtle stylistic and structural features of the input, rather than localised to a single token sequence \todo{is "to a single token sequence" necessary?} \citep{needham_llms_2025}. Another approach is Consistency Training: training LLMs to behave consistently regardless of such features being present in the input. We focus on the second approach in this work.
+One approach to mitigate the behavioural incosistency driven by extraneous input features is to remove these features from the input or the internal representations induced by the input \citep{nguyen_probing_2025, hua_steering_2025}. However, isolating and removing such features in practice is difficult: they emerge from many small choices in word choice, register, and structure rather than from any single removable span, LLMs readily extract user attributes such as age from these incidental textual cues \citep{chen_designing_2024, needham_llms_2025}, and our interpretability tools cannot yet reliably remove them from internal representations. Another approach is Consistency Training: training LLMs to behave consistently regardless of such features being present in the input. We focus on the second approach in this work.
 
 \subsection{Consistency training}
 
@@ -115,10 +115,7 @@ Bias-Augmented Consistency Training (BCT) trains LLMs to produce the same output
 % the cue, even though the cue was present in its input.
 
 \paragraph{Activation Consistency Training.}
-Activation Consistency Training (ACT) trains LLMs to produce internal representations when given a perturbed input that match the corresponding unperturbed input \citep{irpan_consistency_2025}. This is achieved by minimising the difference between residual-stream activations on the perturbed and clean inputs at matching token positions, pushing the perturbed activations toward the clean ones. ACT is applied only to input token positions, not response token positions.
-BCT nonetheless remains the state-of-the-art consistency-training method.
-
-\todo{For BCT, citation is end of paragraph, For ACT, citation is in the middle. standardise}
+Activation Consistency Training (ACT) trains LLMs to produce internal representations when given a perturbed input that match the corresponding unperturbed input. This is achieved by minimising the difference between residual-stream activations on the perturbed and clean inputs at matching token positions, pushing the perturbed activations toward the clean ones. ACT is applied only to input token positions, not response token positions \citep{irpan_consistency_2025}. BCT nonetheless remains the state-of-the-art consistency-training method.
 
 \suggestion{Suggested BCT paragraph (cite at first mention, matching ACT):\\
 Bias-Augmented Consistency Training (BCT) trains LLMs to produce the same output on perturbed inputs as on the corresponding unperturbed input \citep{chua_bias-augmented_2024}. For each input, a response is sampled from the LLM. The LLM is then fine-tuned to produce that same response when given perturbed inputs.\\
@@ -127,6 +124,7 @@ Bias-Augmented Consistency Training (BCT) trains LLMs to produce the same output
 \paragraph{Existing applications.}
 Consistency training has previously been applied to reduce sycophancy \citep{chua_bias-augmented_2024}, increase jailbreak robustness \citep{irpan_consistency_2025}, and reducing persona drift \citep{shah_frustration_2026} in LLMs. \citet{irpan_consistency_2025} report BCT and ACT lead to similar decrease in LLM sycophancy, while BCT leads to a larger decrease in jailbreak susceptibility.
 
+%% Jannes: this subsection is way too long for an intro -- should just be a paragraph
 \subsection{The obfuscation problem and selective consistency training}
 \label{sec:novel-applications}
 
@@ -210,6 +208,7 @@ parameter-efficient fine-tuning (LoRA) throughout.
 
 Figure~\ref{fig:rlct} depicts the method on a single input with a biased training perturbation and an unbiased anchor perturbation.
 
+%% Jannes: cite the chain-of-thought spillover paper as a limitation here
 The RLCT reward depends only on the trait $T$ (and its derivatives  $p_f$ and $q$) leaving the remaining output free to vary. Where the trait $T$ is distinct from verbalization of the extraneous features driving the consistency in trait $T$, RLCT does not directly apply pressure against verbalization.
 
 \subsection{Other advantages} \todo{sumamrise into one paragraph}
@@ -233,6 +232,7 @@ so the method does not require a privileged ``clean'' or
 settings where every perturbation is on equal footing, or where no
 unperturbed reference is available.
 
+%% Jannes: I don't see how symmetry leads to this conclusion. You can train on >2 perturbations without the objective being symmetric, and once you add the anchor the objective is actually directional.
 \paragraph{Symmetric over perturbations.} The objective is
 non-directional: it pulls all per-perturbation rates toward a
 common target rather than mapping one perturbation onto another.
@@ -261,13 +261,17 @@ full specifications.
 
 \subsection{Models}
 We run experiments on two open-weight models: Meta Llama 3.1 8B
-Instruct and OpenAI GPT OSS 20B. For Meta Llama 3.1 8B Instruct, the
+Instruct and OpenAI GPT OSS 20B.
+%% Jannes: phrasing -- "in the prompt we instruct" instead of "the prompt instructs"
+For Meta Llama 3.1 8B Instruct, the
 prompt instructs the model to reason step-by-step before answering.
+%% Jannes: don't say "internal reasoning". Just say it's a reasoning model that automatically does CoT reasoning.
 For OpenAI GPT OSS 20B, no such instruction is added: the model
 already produces internal reasoning before its final answer in its
 native response format. All training uses LoRA adapters of rank 8.
 
 \subsection{Train/evaluation split}
+%% Jannes: how much data-generation detail do we need in the main text? Mostly defer to the appendix?
 We train on the held-in question sources LogiQA and HellaSwag (1024
 questions sampled from each, drawn from the test split following the
 BCT data-generation procedure) and evaluate on a held-out question
@@ -299,6 +303,7 @@ tripling the rollout budget. Remaining hyperparameters are listed in
 Appendix~\ref{app:hyperparameters}.
 
 \subsection{Metrics}
+%% Jannes: the arrows on the metrics are pointing the wrong way. If the arrow points away from B, that should mean switch away from bias. So swap which one gets \rightarrow vs \leftarrow.
 For each evaluation question $x$ we sample one response under the
 biased prompt and one under the unbiased prompt, and let $b(x), u(x)
 \in \{0,1\}$ indicate whether the model selected the biased option on
@@ -360,6 +365,7 @@ averages over the five held-out bias types. Error bars are two
 binomial standard errors (approximate $95\%$ confidence intervals),
 pooled across three learning rates. Matched controls are reported in
 Appendix~\ref{app:control-results}.}
+%% Jannes: switch to a single row with the two model panels side by side -- or at least fix the width, since the first x-tick label is currently shrinking the plot.
 \label{fig:main-pro-bsr}
 \end{figure}
 
@@ -373,9 +379,12 @@ rightmost column averages over the five held-out bias types. Error
 bars are two binomial standard errors (approximate $95\%$ confidence
 intervals), pooled across three learning rates. Matched controls are
 reported in Appendix~\ref{app:control-results}.}
+%% Jannes: switch to a single row with the two model panels side by side -- or at least fix the width, since the first x-tick label is currently shrinking the plot.
+%% Jannes: highlight the percentage differences in the plot (e.g. annotate "+50" or arrows between bars) so they're easier to parse.
 \label{fig:main-ba}
 \end{figure}
 
+%% Jannes: this paragraph is too detailed -- most of the numbers are readable straight off the plot, trim accordingly.
 \paragraph{Bias following.}
 On the training bias both methods substantially reduce the
 towards-bias switch rate relative to the base model. On Meta Llama
@@ -398,6 +407,7 @@ $0.36$, against a base rate of $0.45$; on OpenAI GPT OSS 20B, BCT
 reaches $0.19$ and RLCT reaches $0.18$, against a base rate of
 $0.22$.
 
+%% Jannes: same -- too detailed, mostly readable off the plot.
 \paragraph{Bias verbalisation.}
 The two methods have markedly different effects on BVR. BCT reduces
 BVR on the training bias from $0.99$ to $0.22$ on Meta Llama 3.1 8B
@@ -417,6 +427,7 @@ moves it to $0.76$.
 \section{Discussion}
 
 \paragraph{Recap.}
+%% Jannes: the "without constraining other aspects" framing is a bit too strong -- soften.
 We introduced Reinforcement Learning Consistency Training (RLCT), a
 reinforcement-learning method for selective consistency training that
 enforces consistency over a designated behavioural property without
