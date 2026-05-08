@@ -106,7 +106,7 @@ Consistency training is a class of methods that train LLMs to behave similarly a
 % (iii) the training signal that enforces it.
 
 \paragraph{Bias-Augmented Consistency Training.}
-Bias-Augmented Consistency Training (BCT) trains LLMs to produce the same output on perturbed inputs as on the corresponding unperturbed input. For each input, a response is sampled from the LLM. The LLM is then fine-tuned to produce that same response when given perturbed inputs \citep{chua_bias-augmented_2024}.
+Bias-Augmented Consistency Training (BCT) \citep{chua_bias-augmented_2024} trains LLMs to produce the same output on perturbed inputs as on the corresponding unperturbed input. For each input, a response is sampled from the LLM. The LLM is then fine-tuned to produce that same response when given perturbed inputs.
 
 % Because the supervision signal is the entire target response, BCT does
 % not distinguish between consistency on the final answer and consistency
@@ -115,14 +115,8 @@ Bias-Augmented Consistency Training (BCT) trains LLMs to produce the same output
 % the cue, even though the cue was present in its input.
 
 \paragraph{Activation Consistency Training.}
-Activation Consistency Training (ACT) trains LLMs to produce internal representations when given a perturbed input that match the corresponding unperturbed input \citep{irpan_consistency_2025}. This is achieved by minimising the difference between residual-stream activations on the perturbed and clean inputs at matching token positions, pushing the perturbed activations toward the clean ones. ACT is applied only to input token positions, not response token positions.
+Activation Consistency Training (ACT) \citep{irpan_consistency_2025} trains LLMs to produce internal representations when given a perturbed input that match the corresponding unperturbed input. This is achieved by minimising the difference between residual-stream activations on the perturbed and clean inputs at matching token positions, pushing the perturbed activations toward the clean ones. ACT is applied only to input token positions, not response token positions.
 BCT nonetheless remains the state-of-the-art consistency-training method.
-
-\todo{For BCT, citation is end of paragraph, For ACT, citation is in the middle. standardise}
-
-\suggestion{Suggested BCT paragraph (cite at first mention, matching ACT):\\
-Bias-Augmented Consistency Training (BCT) trains LLMs to produce the same output on perturbed inputs as on the corresponding unperturbed input \citep{chua_bias-augmented_2024}. For each input, a response is sampled from the LLM. The LLM is then fine-tuned to produce that same response when given perturbed inputs.\\
-(ACT paragraph unchanged.)}
 
 \paragraph{Existing applications.}
 Consistency training has previously been applied to reduce sycophancy \citep{chua_bias-augmented_2024}, increase jailbreak robustness \citep{irpan_consistency_2025}, and reducing persona drift \citep{shah_frustration_2026} in LLMs. \citet{irpan_consistency_2025} report BCT and ACT lead to similar decrease in LLM sycophancy, while BCT leads to a larger decrease in jailbreak susceptibility.
