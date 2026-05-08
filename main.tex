@@ -19,15 +19,15 @@
 
 \newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
 
-\title{Selective Consistency Training with Reinforcement Learning}
+\title{Reinforcement Learning Consistency Training: Training for Consistency while Mitigating Obfuscation}
 
-\author[1]{Sohaib Imran\thanks{Correspondence: \texttt{sohaibimran7@gmail.com}}}
+\author[1]{Sohaib Imran\thanks{Correspondence: \texttt{s.imran1@lancaster.ac.uk}}}
 \author[2]{Prakhar Gupta}
 \author[3]{Jannes Elstner}
 \author[4]{David Africa}
 \affil[1]{Lancaster University}
 \affil[2]{University of Michigan}
-\affil[3]{Apollo Research}
+\affil[3]{Independent\thanks{Now at Apollo Research}}
 \affil[4]{UK AI Security Institute}
 
 \date{}
@@ -37,47 +37,47 @@
 \maketitle
 
 \begin{abstract}
-Large language models behave inconsistently under prompt cues that
-should not, in principle, change the behaviour of interest, such as
-sycophancy cues and signals of evaluation awareness. Existing
-consistency training methods, including Bias-Augmented Consistency
-Training (BCT), constrain the entire output to match a clean-prompt
-reference and so penalise any verbalisation of the cue, creating
-obfuscation pressure that undermines monitorability. We introduce
-\emph{Reinforcement Learning Consistency Training} (RLCT), which
-enforces consistency only on a designated behavioural property and
-leaves the chain of thought unconstrained: it samples groups of
-trajectories under multiple input perturbations, scores each with a
-binary trait classifier, and rewards every trajectory by the extent
-to which its trait value pulls the per-perturbation behaviour rate
-toward an aggregated target. On the sycophancy benchmark of
-\citet{chua_bias-augmented_2024}, evaluated on Meta Llama 3.1 8B
-Instruct and OpenAI GPT OSS 20B, RLCT matches BCT's reduction in
-held-out towards-bias switching while keeping verbalisation within
-standard error of the base model; BCT instead suppresses
-verbalisation by $56$--$70\%$. In-distribution on OpenAI GPT OSS 20B,
-RLCT's reduction trails BCT's ($0.21$ versus $0.11$, against a base
-rate of $0.30$). A verbalisation-rate monitor calibrated on the base
-model would therefore fail to flag bias-driven answers under BCT but
-remain calibrated under RLCT, showing that consistency training need
-not trade behavioural robustness against monitorability.
+
+Large language model (LLM) behaviours are often influenced by spurious input features such as cues revealing the user's biases. Consistency training has been applied to reduce this influence, but previous methods enforce consistency over the entire response or internal activations, including verbalisation of these features \citep{chua_bias-augmented_2024,irpan_consistency_2025}. This could lead to obfuscation and undermine monitorability. We introduce \emph{Reinforcement Learning Consistency Training} (RLCT), the first consistency training method enforcing consistency only over selected behavioural properties, leaving the remaining output unconstrained. Moreover, unlike previous methods, RLCT does not require inputs without spurious features. We train the Meta Llama 3.1 8B Instruct and OpenAI GPT OSS 20B LLMs for sycophancy reduction via RLCT and Bias-Augmented Consistency Training (BCT) \citep{chua_bias-augmented_2024}, and report results on a subset of biases from \citeauthor{chua_bias-augmented_2024}'s dataset. RLCT matches BCT in sycophancy reduction for biases held out from the training dataset, while causing minimal obfuscation compared to BCT. RLCT is also more data-efficient but less compute-efficient than BCT in our experiments. Our work introduces the first consistency training method that does not also indirectly train for obfuscation, allowing consistency training to be extended to settings where auditing and monitoring LLM outputs is important, and to settings where spurious features cannot be removed from the input.
+
+
+% Existing
+% consistency training methods, including Bias-Augmented Consistency
+% Training (BCT), constrain the entire output to match a clean-prompt
+% reference and so penalise any verbalisation of the cue, creating
+% obfuscation pressure that undermines monitorability. We introduce
+% \emph{Reinforcement Learning Consistency Training} (RLCT), which
+% enforces consistency only on a designated behavioural property and
+% leaves the chain of thought unconstrained: it samples groups of
+% trajectories under multiple input perturbations, scores each with a
+% binary trait classifier, and rewards every trajectory by the extent
+% to which its trait value pulls the per-perturbation behaviour rate
+% toward an aggregated target. On the sycophancy benchmark of
+% \citet{chua_bias-augmented_2024}, evaluated on Meta Llama 3.1 8B
+% Instruct and OpenAI GPT OSS 20B, RLCT matches BCT's reduction in
+% held-out towards-bias switching while keeping verbalisation within
+% standard error of the base model; BCT instead suppresses
+% verbalisation by $56$--$70\%$. In-distribution on OpenAI GPT OSS 20B,
+% RLCT's reduction trails BCT's ($0.21$ versus $0.11$, against a base
+% rate of $0.30$). A verbalisation-rate monitor calibrated on the base
+% model would therefore fail to flag bias-driven answers under BCT but
+% remain calibrated under RLCT, showing that consistency training need
+% not trade behavioural robustness against monitorability.
 \end{abstract}
 
 \section{Introduction}
 
-Large language model (LLM) behaviour is often influenced by prompt cues
+Large language model (LLM) behaviour is often influenced by spurious input features
 that should not, in principle, affect the behaviour of interest. A
 widely studied example is sycophancy, where LLMs adapt their responses
-to align with a user's stated views or preferences
-\citep{perez_discovering_2022}. Another example is evaluation gaming,
-where LLM behaviour depends on whether the model "believes" the input to be
-part of an evaluation \citep{meinke_frontier_2024,greenblatt_alignment_2024,vanderweij_ai_2024}.
-This is particularly concerning because, if models behave differently in
-evaluations than in the real world, our evaluations become
-uninformative about real-world behaviour
-\citep{carlsmith_scheming_2023}.
+to align with users' views and preferences
+\citep{perez_discovering_2022}. 
 
-Two general approaches address these behavioural inconsistencies. The first is to modify the input or the internal representations induced by the input so that the cues driving the inconsistencies are absent or hard for the LLM to detect \citep{nguyen_probing_2025,hua_steering_2025}. However, isolating and removing the relevant cues from the input or internal representations is difficult in practice: such cues are often distributed across many subtle stylistic and structural features of the prompt, rather than localised to a single edit \citep{needham_llms_2025}. The second is to train LLMs to behave consistently regardless of whether such cues are present. We focus on the second approach in this work.
+Another example is evaluation gaming,
+where LLM behaviour depends on whether the model "believes" the input to be
+part of an evaluation \citep{meinke_frontier_2024,greenblatt_alignment_2024,vanderweij_ai_2024}.\todo{Why are we mentioning this? What does this example cover that the previous doesn't. Explicitly state that and then demonstrate with the example.}
+
+One approach to mitigate the behavioural incosistency driven by spurious input features is to remove these features from the input or the internal representations induced by the input \citep{nguyen_probing_2025, hua_steering_2025}. However, isolating and removing spurious features from the input or internal representations is difficult in practice: such features are often distributed across many subtle stylistic and structural features of the input, rather than localised to a single token sequence \todo{is "to a single token sequence" necessary?} \citep{needham_llms_2025}. Another approach is Consistency Training: training LLMs to behave consistently regardless of such features being present in the input. We focus on the second approach in this work.
 
 \subsection{Consistency training}
 
@@ -89,7 +89,7 @@ Consistency training is a class of methods that train LLMs to produce consistent
 % (iii) the training signal that enforces it.
 
 \paragraph{Bias-Augmented Consistency Training.}
-Bias-Augmented Consistency Training (BCT) trains LLMs to produce the same output on perturbed inputs as on the corresponding unperturbed input. For each prompt, a response is sampled from the LLM. The LLM is then fine-tuned to produce that same response when given perturbed prompts \citep{chua_bias-augmented_2024}.
+Bias-Augmented Consistency Training (BCT) trains LLMs to produce the same output on perturbed inputs as on the corresponding unperturbed input. For each input, a response is sampled from the LLM. The LLM is then fine-tuned to produce that same response when given perturbed inputs \citep{chua_bias-augmented_2024}.
 
 % Because the supervision signal is the entire target response, BCT does
 % not distinguish between consistency on the final answer and consistency
@@ -98,18 +98,20 @@ Bias-Augmented Consistency Training (BCT) trains LLMs to produce the same output
 % the cue, even though the cue was present in its input.
 
 \paragraph{Activation Consistency Training.}
-Activation Consistency Training (ACT) trains LLMs to produce internal representations when given a perturbed input that match the corresponding unperturbed input \citep{irpan_consistency_2025}. This is achieved by minimising the difference between residual-stream activations on the perturbed and clean prompts at matching token positions, pushing the perturbed activations toward the clean ones. ACT is applied only to prompt token positions, not response token positions.
+Activation Consistency Training (ACT) trains LLMs to produce internal representations when given a perturbed input that match the corresponding unperturbed input \citep{irpan_consistency_2025}. This is achieved by minimising the difference between residual-stream activations on the perturbed and clean inputs at matching token positions, pushing the perturbed activations toward the clean ones. ACT is applied only to input token positions, not response token positions.
 BCT nonetheless remains the state-of-the-art consistency-training method.
 
+\todo{For BCT, citation is end of paragraph, For ACT, citation is in the middle. standardise}
+
 \paragraph{Existing applications.}
-Consistency training has previously been applied to sycophancy \citep{chua_bias-augmented_2024}, jailbreak robustness \citep{irpan_consistency_2025}, and reducing persona drift \citep{shah_frustration_2026}. \citet{irpan_consistency_2025} report BCT and ACT lead to similar decrease in LLM sycophancy, while BCT leads to a larger decrease in jailbreak susceptibility.
+Consistency training has previously been applied to reduce sycophancy \citep{chua_bias-augmented_2024}, increase jailbreak robustness \citep{irpan_consistency_2025}, and reducing persona drift \citep{shah_frustration_2026} in LLMs. \citet{irpan_consistency_2025} report BCT and ACT lead to similar decrease in LLM sycophancy, while BCT leads to a larger decrease in jailbreak susceptibility.
 
 \subsection{The obfuscation problem and selective consistency training}
 \label{sec:novel-applications}
 
-BCT and ACT train LLMs to generate the same output or internal representations as when certain cues are absent from the prompt. This raises multiple concerns. \citet{irpan_consistency_2025} note that this training may misgeneralise to LLMs ignoring other important parts of the prompt, such as user instructions. Furthermore, constraining the entire output or internal activations also constrains any mentions or verbalisations of the prompt cues driving inconsistency, leading to \emph{obfuscation}: the model learns to suppress evidence that it detected the cue. This hampers the applicability of these methods when monitoring and auditing are important. For example, training models to not verbalise prompt injection jailbreaks may reduce their monitorability; training LLMs to not verbalise when they correctly infer that they are being evaluated reduces our ability to track evaluation awareness \citep{schoen_stress_2025,meinke_frontier_2024,needham_llms_2025,nguyen_probing_2025}.
+BCT and ACT train LLMs to generate the same output or internal representations given an input with spurious features as when these features are absent from the input. This raises multiple concerns. \citet{irpan_consistency_2025} note that this training may misgeneralise to LLMs ignoring other parts of the input which may be important, such as user instructions. Furthermore, constraining the entire output or internal activations also constrains verbalisation of these input features, which may misgeneralise to \emph{obfuscation}: LLMs learning to supress verbalising these features even where these features affect their behaviour. This hampers the applicability of consistency training in problems where monitoring and auditing are important. For example, when training for prompt-injection robustness, it is especially concerning if the model learns to evade prompt-injection monitors while still following injected instructions \todo{cite anthropic / openai}. Similarly, when training to mitigate evaluation gaming \todo{citation}, indirectly training models to not verbalise evaluation awareness \citep{needham_llms_2025} would be undesirable \todo{this sentence has two unexplained terms, evaluation gaming and evaluation awareness. Can we just reference and call it a day?}.
 
-These concerns motivate \emph{selective consistency training}: enforcing consistency only on the behavioural properties of interest, leaving the rest of the output, including any verbalisation of the cues, free to vary. We introduce \emph{Reinforcement Learning Consistency Training} (RLCT), which implements this by computing the rate of the target behaviour under each input perturbation and rewarding outputs that bring those rates into alignment.
+These concerns motivate \emph{selective consistency training}: enforcing consistency only on the behavioural properties of interest, leaving the rest of the output, including any verbalisation of the spurious input features, free to vary. We introduce \emph{Reinforcement Learning Consistency Training} (RLCT), which implements this by computing the rate of the target behaviour under each input perturbation and rewarding outputs that bring those rates into alignment.
 
 \subsection{Summary of contributions}
 \begin{itemize}
