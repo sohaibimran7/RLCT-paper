@@ -38,7 +38,7 @@
 
 \begin{abstract}
 
-Large language model (LLM) behaviours are often influenced by spurious input features such as cues revealing the user's biases. Consistency training has been applied to reduce this influence, but previous methods enforce consistency over the entire response or internal activations, including verbalisation of these features \citep{chua_bias-augmented_2024,irpan_consistency_2025}. This could lead to obfuscation and undermine monitorability. We introduce \emph{Reinforcement Learning Consistency Training} (RLCT), the first consistency training method enforcing consistency only over selected behavioural properties, leaving the remaining output unconstrained. Moreover, unlike previous methods, RLCT does not require inputs without spurious features. We train the Meta Llama 3.1 8B Instruct and OpenAI GPT OSS 20B LLMs for sycophancy reduction via RLCT and Bias-Augmented Consistency Training (BCT) \citep{chua_bias-augmented_2024}, and report results on a subset of biases from \citeauthor{chua_bias-augmented_2024}'s dataset. RLCT matches BCT in sycophancy reduction for biases held out from the training dataset, while causing minimal obfuscation compared to BCT. RLCT is also more data-efficient but less compute-efficient than BCT in our experiments. Our work introduces the first consistency training method that does not also indirectly train for obfuscation, allowing consistency training to be extended to settings where auditing and monitoring LLM outputs is important, and to settings where spurious features cannot be removed from the input.
+Large language models are often influenced by extraneous input features, such as cues revealing a user’s preferred answer. Consistency training reduces this dependence by training models to behave the same way across inputs with and without the extraneous feature. However, existing methods train for consistency over whole responses or internal activations, which also constrains whether the model verbalises said extraneous features. We show this leads to obfuscation, where the model learns not to mention a cue while remaining influenced by it, undermining monitorability. To address this, we introduce Reinforcement Learning Consistency Training (RLCT), which trains for consistency over selected behavioural properties without constraining how this behaviour is expressed. RLCT matches the rate of a target behaviour across input perturbations, rather than requiring paired inputs with and without the extraneous feature, extending consistency training to settings where the extraneous features cannot be removed. We evaluate RLCT on sycophancy reduction in two open-weight language models, achieving reductions in bias-following comparable to a standard consistency-training baseline on held-out bias types, while largely preserving the model’s tendency to verbalise the bias cue. Further, we find that RLCT is more data-efficient at the expense of being less compute-efficient in our experiments. Overall, RLCT shows that consistency training can improve behavioural robustness without directly trading off against monitorability.
 
 
 % Existing
@@ -67,21 +67,21 @@ Large language model (LLM) behaviours are often influenced by spurious input fea
 
 \section{Introduction}
 
-Large language model (LLM) behaviour is often influenced by spurious input features
+Large Language model (LLM) behaviour is often influenced by extraneous input features
 that should not, in principle, affect the behaviour of interest. A
 widely studied example is sycophancy, where LLMs adapt their responses
 to align with users' views and preferences
 \citep{perez_discovering_2022}. 
 
 Another example is evaluation gaming,
-where LLM behaviour depends on whether the model "believes" the input to be
+where LLM behaviour is affected by whether the model "believes" the input to be
 part of an evaluation \citep{meinke_frontier_2024,greenblatt_alignment_2024,vanderweij_ai_2024}.\todo{Why are we mentioning this? What does this example cover that the previous doesn't. Explicitly state that and then demonstrate with the example.}
 
-One approach to mitigate the behavioural incosistency driven by spurious input features is to remove these features from the input or the internal representations induced by the input \citep{nguyen_probing_2025, hua_steering_2025}. However, isolating and removing spurious features from the input or internal representations is difficult in practice: such features are often distributed across many subtle stylistic and structural features of the input, rather than localised to a single token sequence \todo{is "to a single token sequence" necessary?} \citep{needham_llms_2025}. Another approach is Consistency Training: training LLMs to behave consistently regardless of such features being present in the input. We focus on the second approach in this work.
+One approach to mitigate the behavioural incosistency driven by extraneous input features is to remove these features from the input or the internal representations induced by the input \citep{nguyen_probing_2025, hua_steering_2025}. However, isolating and removing extraneous features from the input or internal representations is difficult in practice: such features are often distributed across many subtle stylistic and structural features of the input, rather than localised to a single token sequence \todo{is "to a single token sequence" necessary?} \citep{needham_llms_2025}. Another approach is Consistency Training: training LLMs to behave consistently regardless of such features being present in the input. We focus on the second approach in this work.
 
 \subsection{Consistency training}
 
-Consistency training is a class of methods that train LLMs to produce consistent outputs or internal representations across input perturbations \citep{chua_bias-augmented_2024,irpan_consistency_2025}.
+Consistency training is a class of methods that train LLMs to behave similarly across input perturbations \citep{chua_bias-augmented_2024,irpan_consistency_2025}. We briefly cover 
 
 % We define a consistency training method by three choices: (i) a set of
 % input perturbations that should not change the behaviour of interest,
@@ -111,7 +111,9 @@ Consistency training has previously been applied to reduce sycophancy \citep{chu
 
 BCT and ACT train LLMs to generate the same output or internal representations given an input with spurious features as when these features are absent from the input. This raises multiple concerns. \citet{irpan_consistency_2025} note that this training may misgeneralise to LLMs ignoring other parts of the input which may be important, such as user instructions. Furthermore, constraining the entire output or internal activations also constrains verbalisation of these input features, which may misgeneralise to \emph{obfuscation}: LLMs learning to supress verbalising these features even where these features affect their behaviour. This hampers the applicability of consistency training in problems where monitoring and auditing are important. For example, when training for prompt-injection robustness, it is especially concerning if the model learns to evade prompt-injection monitors while still following injected instructions \todo{cite anthropic / openai}. Similarly, when training to mitigate evaluation gaming \todo{citation}, indirectly training models to not verbalise evaluation awareness \citep{needham_llms_2025} would be undesirable \todo{this sentence has two unexplained terms, evaluation gaming and evaluation awareness. Can we just reference and call it a day?}.
 
-These concerns motivate \emph{selective consistency training}: enforcing consistency only on the behavioural properties of interest, leaving the rest of the output, including any verbalisation of the spurious input features, free to vary. We introduce \emph{Reinforcement Learning Consistency Training} (RLCT), which implements this by computing the rate of the target behaviour under each input perturbation and rewarding outputs that bring those rates into alignment.
+
+
+These concerns motivate \emph{selective consistency training}: enforcing consistency only on the behavioural properties of interest, leaving the rest of the output, including any verbalisation of the spurious input features, free to vary. We introduce \emph{Reinforcement Learning Consistency Training} (RLCT), which implements this by computing the rate of the target behaviour under each input perturbation and rewarding trajectories that.
 
 \subsection{Summary of contributions}
 \begin{itemize}
