@@ -161,9 +161,13 @@ paraphrased for brevity.}
 \subsection{Method}
 Figure~\ref{fig:rlct} depicts the method on a single input with two
 perturbations.
-The core idea is to match the rate of the target behaviour across
-perturbations, i.e.\ to reduce the variance among per-perturbation rates,
-by rewarding each trajectory in proportion to its contribution to that
+Because LLMs are stochastic policies, their behaviour is naturally described
+by rates: a model might follow a sycophantic suggestion in 40\% of samples.
+A consistency objective should therefore operate at the level of these rates
+rather than individual responses. If spurious input features shift the rate
+of a target behaviour across perturbations, the goal is to match those rates.
+The core idea is to reduce the variance among per-perturbation rates by
+rewarding each trajectory in proportion to its contribution to that
 reduction. In practice we often do not want to pull all rates toward one
 another symmetrically; instead we fix the rate of one perturbation (e.g.\ the
 unbiased prompt) as the target, making the objective directional.
