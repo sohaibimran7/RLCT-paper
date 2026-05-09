@@ -161,6 +161,17 @@ paraphrased for brevity.}
 \subsection{Method}
 Figure~\ref{fig:rlct} depicts the method on a single input with two
 perturbations.
+Because LLMs are stochastic policies, their behaviour is naturally described
+by rates: a model might follow a sycophantic suggestion in 40\% of samples.
+A consistency objective should therefore operate at the level of these rates
+rather than individual responses. If spurious input features shift the rate
+of a target behaviour across perturbations, the goal is to match those rates.
+The core idea is to reduce the variance among per-perturbation rates by
+rewarding each trajectory in proportion to its contribution to that
+reduction. In practice we often do not want to pull all rates toward one
+another symmetrically; instead we fix the rate of one perturbation (e.g.\ the
+unbiased prompt) as the target, making the objective directional.
+
 Consider an input $x$. Let $\mathcal{T}$ denote a set of \emph{training}
 perturbations and $\mathcal{A}$ a set of \emph{anchor} perturbations (the two
 sets may overlap), and write $\mathcal{F} = \mathcal{T} \cup \mathcal{A}$ for
@@ -181,40 +192,17 @@ or a function of the per-perturbation rates such as their mean, minimum, or
 maximum.
 
 The consistency reward, applied only to trajectories from training
-perturbations, rewards a trajectory when its trait value moves the local
-rate $p_f$ toward the target rate $q$:
+perturbations, rewards each trajectory by its contribution to pulling the
+local rate $p_f$ toward the target rate $q$:
 \begin{equation}
 r^{\text{cons}}_{f,i} = -(p_f - q)\,(T(\tau_{f,i}) - p_f),
 \qquad f \in \mathcal{T}.
 \end{equation}
 The baseline $p_f$ is the variance-optimal centring for trajectories sampled
-under perturbation $f$ from the current policy.
-
-To prevent the target rate itself from drifting during training, an optional
-anchor reward, applied only to trajectories from anchor perturbations, ties
-$q$ to the same target statistic $q_0 = Q(\{p^{(0)}_f\}_{f \in \mathcal{A}})$
-computed under the initial policy $\pi_0$ (typically a checkpoint taken
-before consistency training begins), where $p^{(0)}_f$ is the behaviour rate
-of $\pi_0$ on perturbation $f$:
-\begin{equation}
-r^{\text{anchor}}_{f,i} = -(q - q_0)\,(T(\tau_{f,i}) - q),
-\qquad f \in \mathcal{A}.
-\end{equation}
-The baseline $q$ is again the variance-optimal centring under the current
-sampling distribution: $q$ is the empirical mean of trait values over the
-anchor rollouts, whereas $q_0$ comes from a frozen policy and would not
-yield an unbiased baseline.
-
-The total reward for trajectory $\tau_{f,i}$ combines the two terms with
-mixing weight $\alpha$:
-\begin{equation}
-r_{f,i} = (1 - \alpha)\, r^{\text{cons}}_{f,i} + \alpha\, r^{\text{anchor}}_{f,i},
-\end{equation}
-with each component taken as zero outside its domain of definition. A
-trajectory from a perturbation in $\mathcal{T} \cap \mathcal{A}$ thus
-receives both components; one from $\mathcal{T} \setminus \mathcal{A}$
-receives only the consistency term, and one from $\mathcal{A} \setminus
-\mathcal{T}$ only the anchor term.
+under perturbation $f$ from the current policy. An optional anchor reward to
+prevent the target rate from drifting during training is described in
+Appendix~\ref{app:anchor}; all experiments in this paper use the consistency
+reward alone.
 
 We optimise the policy with GRPO and a KL penalty to a fixed reference
 policy. The only departure from standard GRPO is the sampling structure:
@@ -311,8 +299,7 @@ optimisation steps). RLCT is trained with GRPO for one epoch over 64
 prompts at batch size~4 prompts per update (16 update steps); each
 prompt is expanded into a group of $|\mathcal{F}|=2$ perturbations
 (biased and unbiased) with $N=128$ rollouts per perturbation, and the
-consistency reward uses the unbiased prompt as the target rate $q$
-with anchor weight $\alpha=0$. For each method-model combination we
+consistency reward uses the unbiased prompt as the target rate $q$. For each method-model combination we
 run three learning rates and pool the resulting checkpoints when
 reporting metrics, which gives a binomial standard error without
 tripling the rollout budget. Remaining hyperparameters are listed in
@@ -1050,5 +1037,32 @@ figure in Appendices~\ref{app:switch-rates}, \ref{app:ba}, and
 regime: BCT collapses BVR on its trained biases while RLCT preserves
 it, and the held-out switch-rate reductions are comparable between
 the two methods.
+
+\section{Anchor reward}
+\label{app:anchor}
+
+To prevent the target rate $q$ from drifting as the policy updates, RLCT
+supports an optional anchor reward that ties $q$ to the same target statistic
+$q_0 = Q(\{p^{(0)}_f\}_{f \in \mathcal{A}})$ computed under the initial
+policy $\pi_0$ (a checkpoint taken before consistency training begins), where
+$p^{(0)}_f$ is the behaviour rate of $\pi_0$ on perturbation $f$:
+\begin{equation}
+r^{\text{anchor}}_{f,i} = -(q - q_0)\,(T(\tau_{f,i}) - q),
+\qquad f \in \mathcal{A}.
+\end{equation}
+The baseline $q$ is the variance-optimal centring under the current sampling
+distribution: $q$ is the empirical mean of trait values over the anchor
+rollouts, whereas $q_0$ comes from a frozen policy and would not yield an
+unbiased baseline.
+
+The total reward combines the two terms with mixing weight $\alpha$:
+\begin{equation}
+r_{f,i} = (1 - \alpha)\, r^{\text{cons}}_{f,i} + \alpha\, r^{\text{anchor}}_{f,i},
+\end{equation}
+with each component taken as zero outside its domain of definition. A
+trajectory from a perturbation in $\mathcal{T} \cap \mathcal{A}$ receives
+both components; one from $\mathcal{T} \setminus \mathcal{A}$ receives only
+the consistency term, and one from $\mathcal{A} \setminus \mathcal{T}$ only
+the anchor term. All experiments in this paper use $\alpha = 0$.
 
 \end{document}
