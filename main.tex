@@ -125,7 +125,7 @@ Activation Consistency Training (ACT) \citep{irpan_consistency_2025} also picks 
 where $t$ ranges over the longest matching suffix between $x$ and $x_0$ (in practice, the end of the chat template) and $\operatorname{sg}$ stops gradients through the frozen initial policy.
 
 \paragraph{Existing applications.}
-Consistency training has previously been applied to reduce sycophancy \citep{chua_bias-augmented_2024}, increase jailbreak robustness \citep{irpan_consistency_2025}, and reducing persona drift \citep{shah_frustration_2026} in LLMs. \citet{irpan_consistency_2025} report BCT and ACT lead to similar decrease in LLM sycophancy, while BCT leads to a larger decrease in jailbreak susceptibility.
+Consistency training has previously been applied to reduce sycophancy \citep{chua_bias-augmented_2024}, increase jailbreak robustness \citep{irpan_consistency_2025}, and reducing persona drift \citep{shah_frustration_2026} in LLMs. \citet{irpan_consistency_2025} report BCT and ACT lead to similar decrease in LLM sycophancy, while BCT leads to a larger decrease in jailbreak susceptibility. We adopt the sycophancy setting of \citet{chua_bias-augmented_2024} throughout: $\mathcal{X}$ consists of a \emph{biased} prompt -- a multiple-choice question with an added cue suggesting a particular answer -- and an \emph{unbiased} prompt presenting the same question without the cue, with the unbiased prompt serving as the clean reference $x_0$.
 
 \section{Rate Matching Consistency Training}
 
@@ -202,12 +202,12 @@ reward that explicitly encourages the chain of thought to mention a
 detected cue can be added directly, trading off against the
 consistency term through a mixing weight.
 
-\paragraph{Output perturbations.} The same construction applies when
+\paragraph{Output variation.} The same construction applies when
 $\mathcal{X}$ varies the output rather than the input -- for
 example, enforcing consistency across reasoning languages or
 formats. Whether obfuscation pressure is genuinely absent in this
-regime requires separate study, since output-side perturbations
-constrain the chain of thought directly.
+regime requires separate study, since varying the output
+constrains the chain of thought directly.
 
 \paragraph{Flexible reference structure.}
 The target $p_{\text{ref}} = Q(\{p_x\}_{x \in \mathcal{X}_{\text{ref}}})$
@@ -221,8 +221,8 @@ recovers a symmetric objective that pulls all rates toward a common
 target. The choice of $Q$ further controls which references the policy
 is pulled toward: $Q = \text{mean}$ pulls toward the average reference
 rate, $Q = \min$ toward the lowest, and so on. This permits training
-over arbitrary sets of perturbations, including more than two and
-including settings where no unperturbed reference is available.
+over arbitrary sets of related inputs, including more than two and
+including settings where no clean reference is available.
 
 \section{Experiments}
 \label{sec:experiments}
