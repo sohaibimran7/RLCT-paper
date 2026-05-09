@@ -187,6 +187,12 @@ rate $p_f$ toward the target rate $q$:
 r^{\text{cons}}_{f,i} = -(p_f - q)\,(T(\tau_{f,i}) - p_f),
 \qquad f \in \mathcal{T}.
 \end{equation}
+The two factors have a natural interpretation: $(T(\tau_{f,i}) - p_f)$ is
+this trajectory's marginal contribution to shifting the local rate $p_f$
+(positive if $T=1$, negative if $T=0$, centred at the current rate), and
+$(p_f - q)$ is the signed gap between the local rate and the target. The
+negative sign ensures that reward is positive precisely when the trajectory's
+contribution would close the gap.
 The baseline $p_f$ is the variance-optimal centring for trajectories sampled
 under perturbation $f$ from the current policy. An optional anchor reward to
 prevent the target rate from drifting during training is described in
