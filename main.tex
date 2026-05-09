@@ -114,7 +114,6 @@ Bias-Augmented Consistency Training (BCT) \citep{chua_bias-augmented_2024} picks
 \begin{equation}
 \mathcal{L}_{\text{BCT}}(\theta) = -\sum_{x \in \mathcal{X} \setminus \{x_0\}} \log \pi_\theta(\tau \mid x).
 \end{equation}
-The supervision is the entire response, so BCT constrains the chain of thought as well as the final answer.
 
 \paragraph{Activation Consistency Training.}
 Activation Consistency Training (ACT) \citep{irpan_consistency_2025} also picks a reference input $x_0$ and instead matches residual-stream activations on the remaining inputs to those on the reference. Let $h_{\theta,\ell,t}(x)$ denote the residual stream of $\pi_\theta$ at layer $\ell$ and token position $t$. ACT minimises
