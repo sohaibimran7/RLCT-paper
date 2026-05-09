@@ -161,6 +161,14 @@ paraphrased for brevity.}
 \subsection{Method}
 Figure~\ref{fig:rlct} depicts the method on a single input with two
 perturbations.
+The core idea is to match the rate of the target behaviour across
+perturbations, i.e.\ to reduce the variance among per-perturbation rates,
+by rewarding each trajectory in proportion to its contribution to that
+reduction. In practice we often do not want to pull all rates toward one
+another symmetrically; instead we designate one perturbation (e.g.\ the
+unbiased prompt) as an anchor and fix its rate as the target, making the
+objective directional.
+
 Consider an input $x$. Let $\mathcal{T}$ denote a set of \emph{training}
 perturbations and $\mathcal{A}$ a set of \emph{anchor} perturbations (the two
 sets may overlap), and write $\mathcal{F} = \mathcal{T} \cup \mathcal{A}$ for
@@ -181,22 +189,12 @@ or a function of the per-perturbation rates such as their mean, minimum, or
 maximum.
 
 The consistency reward, applied only to trajectories from training
-perturbations, rewards a trajectory when its trait value moves the local
-rate $p_f$ toward the target rate $q$:
+perturbations, rewards each trajectory by its contribution to pulling the
+local rate $p_f$ toward the target rate $q$:
 \begin{equation}
 r^{\text{cons}}_{f,i} = -(p_f - q)\,(T(\tau_{f,i}) - p_f),
 \qquad f \in \mathcal{T}.
 \end{equation}
-Intuitively, each trajectory is rewarded in proportion to its contribution
-to reducing the variance among local rates: $(T(\tau_{f,i}) - p_f)$ is the
-trajectory's marginal pull on $p_f$ (positive if $T=1$, negative if $T=0$),
-and $(p_f - q)$ scales that pull by how far the local rate sits from the
-target, with the negative sign ensuring that pulls which close the gap are
-rewarded. In practice we often do not want to pull all rates toward one
-another symmetrically; instead we fix $q$ as the rate under a designated
-anchor perturbation (e.g.\ the unbiased prompt), making the objective
-directional: all training-perturbation rates are pulled toward that fixed
-reference.
 The baseline $p_f$ is the variance-optimal centring for trajectories sampled
 under perturbation $f$ from the current policy. An optional anchor reward to
 prevent the target rate from drifting during training is described in
