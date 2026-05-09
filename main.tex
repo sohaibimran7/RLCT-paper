@@ -28,7 +28,7 @@
 \begin{document}
 
 \twocolumn[
-\icmltitle{Reinforcement Learning Consistency Training: Training for Consistency while Mitigating Obfuscation}
+\icmltitle{Rate Matching Consistency Training: Training for Consistency while Mitigating Obfuscation}
 
 % Keep real authors here; ICML style anonymizes them unless [accepted] is used.
 \begin{icmlauthorlist}
@@ -54,7 +54,7 @@
 
 \begin{abstract}
 
-Large language models are often influenced by extraneous input features, such as cues revealing a user’s preferred answer. Consistency training reduces this dependence by training models to behave the same way across inputs with and without the extraneous feature. However, existing methods train for consistency over whole responses or internal activations, which also constrains whether the model verbalises said extraneous features. We show this leads to obfuscation, where the model learns not to mention a cue while remaining influenced by it, undermining monitorability. To address this, we introduce Reinforcement Learning Consistency Training (RLCT), which trains for consistency over selected behavioural properties without constraining how this behaviour is expressed. RLCT matches the rate of a target behaviour across input perturbations, rather than requiring paired inputs with and without the extraneous feature, extending consistency training to settings where the extraneous features cannot be removed. We evaluate RLCT on sycophancy reduction in two open-weight language models, achieving reductions in bias-following comparable to a standard consistency-training baseline on held-out bias types, while largely preserving the model’s tendency to verbalise the bias cue. Further, we find that RLCT is more data-efficient at the expense of being less compute-efficient in our experiments. Overall, RLCT shows that consistency training can improve behavioural robustness without directly trading off against monitorability.
+Large language models are often influenced by extraneous input features, such as cues revealing a user’s preferred answer. Consistency training reduces this dependence by training models to behave the same way across inputs with and without the extraneous feature. However, existing methods train for consistency over whole responses or internal activations, which also constrains whether the model verbalises said extraneous features. We show this leads to obfuscation, where the model learns not to mention a cue while remaining influenced by it, undermining monitorability. To address this, we introduce Rate Matching Consistency Training (RMCT), which trains for consistency over selected behavioural properties without constraining how this behaviour is expressed. RMCT matches the rate of a target behaviour across input perturbations, rather than requiring paired inputs with and without the extraneous feature, extending consistency training to settings where the extraneous features cannot be removed. We evaluate RMCT on sycophancy reduction in two open-weight language models, achieving reductions in bias-following comparable to a standard consistency-training baseline on held-out bias types, while largely preserving the model’s tendency to verbalise the bias cue. Further, we find that RMCT is more data-efficient at the expense of being less compute-efficient in our experiments. Overall, RMCT shows that consistency training can improve behavioural robustness without directly trading off against monitorability.
 
 
 % Existing
@@ -62,7 +62,7 @@ Large language models are often influenced by extraneous input features, such as
 % Training (BCT), constrain the entire output to match a clean-prompt
 % reference and so penalise any verbalisation of the cue, creating
 % obfuscation pressure that undermines monitorability. We introduce
-% \emph{Reinforcement Learning Consistency Training} (RLCT), which
+% \emph{Rate Matching Consistency Training} (RMCT), which
 % enforces consistency only on a designated behavioural property and
 % leaves the chain of thought unconstrained: it samples groups of
 % trajectories under multiple input perturbations, scores each with a
@@ -70,14 +70,14 @@ Large language models are often influenced by extraneous input features, such as
 % to which its trait value pulls the per-perturbation behaviour rate
 % toward an aggregated target. On the sycophancy benchmark of
 % \citet{chua_bias-augmented_2024}, evaluated on Meta Llama 3.1 8B
-% Instruct and OpenAI GPT OSS 20B, RLCT matches BCT's reduction in
+% Instruct and OpenAI GPT OSS 20B, RMCT matches BCT's reduction in
 % held-out towards-bias switching while keeping verbalisation within
 % standard error of the base model; BCT instead suppresses
 % verbalisation by $56$--$70\%$. In-distribution on OpenAI GPT OSS 20B,
-% RLCT's reduction trails BCT's ($0.21$ versus $0.11$, against a base
+% RMCT's reduction trails BCT's ($0.21$ versus $0.11$, against a base
 % rate of $0.30$). A verbalisation-rate monitor calibrated on the base
 % model would therefore fail to flag bias-driven answers under BCT but
-% remain calibrated under RLCT, showing that consistency training need
+% remain calibrated under RMCT, showing that consistency training need
 % not trade behavioural robustness against monitorability.
 \end{abstract}
 
@@ -136,33 +136,33 @@ BCT and ACT train LLMs to generate the same output or internal representations g
 
 \suggestion{Eval-gaming todo: \citep{schoen_stress_2025} -- Schoen et al., ``Stress Testing Deliberative Alignment for Anti-Scheming Training''. The paper's own concern -- that anti-scheming training may be confounded with situational awareness -- aligns directly with the obfuscation worry raised here.}
 
-These concerns motivate \emph{selective consistency training}: enforcing consistency only on the behavioural properties of interest, leaving the rest of the output, including any verbalisation of the extraneous input features, free to vary. We introduce \emph{Reinforcement Learning Consistency Training} (RLCT), which implements this by computing the rate of the target behaviour under each input perturbation and rewarding trajectories that.
+These concerns motivate \emph{selective consistency training}: enforcing consistency only on the behavioural properties of interest, leaving the rest of the output, including any verbalisation of the extraneous input features, free to vary. We introduce \emph{Rate Matching Consistency Training} (RMCT), which implements this by computing the rate of the target behaviour under each input perturbation and rewarding trajectories that.
 
 \subsection{Summary of contributions}
 \begin{itemize}
-    \item We introduce \emph{Reinforcement Learning Consistency Training}
-    (RLCT), a method that enforces consistency only over selected
+    \item We introduce \emph{Rate Matching Consistency Training}
+    (RMCT), a method that enforces consistency only over selected
     behavioural properties of the output.
-    \item We show that RLCT achieves bias-following reductions on par with BCT on the sycophancy benchmark of \citet{chua_bias-augmented_2024}, evaluated on Meta Llama 3.1 8B Instruct and OpenAI GPT OSS 20B.
-    \item We show that RLCT causes significantly less obfuscation than BCT, as measured by a significantly smaller drop in bias verbalisation.
+    \item We show that RMCT achieves bias-following reductions on par with BCT on the sycophancy benchmark of \citet{chua_bias-augmented_2024}, evaluated on Meta Llama 3.1 8B Instruct and OpenAI GPT OSS 20B.
+    \item We show that RMCT causes significantly less obfuscation than BCT, as measured by a significantly smaller drop in bias verbalisation.
 \end{itemize}
 
-\section{Reinforcement Learning Consistency Training}
+\section{Rate Matching Consistency Training}
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\linewidth]{figures/rlct_viz.png}
-\caption{\textbf{A depiction of Reinforcement Learning Consistency
-Training (RLCT).} We sample multiple trajectories from the model
+\includegraphics[width=\linewidth]{figures/RMCT_viz.png}
+\caption{\textbf{A depiction of Rate Matching Consistency
+Training (RMCT).} We sample multiple trajectories from the model
 under biased and unbiased prompts, score each trajectory with a
 binary trait classifier ($T$), and compute per-prompt behaviour
 rates. In this simplified two-perturbation case, the unbiased rate
-$p_{\text{unbiased}}$ serves as the target ($q$), and RLCT uses
+$p_{\text{unbiased}}$ serves as the target ($q$), and RMCT uses
 GRPO to push $p_{\text{biased}}$ toward $q$. Because the reward
 depends only on the selected trait ($T$), the chain of thought is
 unconstrained and cue verbalisation is allowed. Responses are
 paraphrased for brevity.}
-\label{fig:rlct}
+\label{fig:RMCT}
 \end{figure*}
 
 Since LLMs are stochastic policies, their behavior is naturally described
@@ -208,9 +208,9 @@ given input, with $N$ trajectories per perturbation; advantage
 normalisation and policy updates then proceed as usual. We use
 parameter-efficient fine-tuning (LoRA) throughout.
 
-Figure~\ref{fig:rlct} depicts the method on a single input with a biased training perturbation and an unbiased anchor perturbation.
+Figure~\ref{fig:RMCT} depicts the method on a single input with a biased training perturbation and an unbiased anchor perturbation.
 
-The RLCT reward depends only on the trait $T$ (and its derivatives  $p_f$ and $q$) leaving the remaining output free to vary. Where the trait $T$ is distinct from verbalization of the extraneous features driving the consistency in trait $T$, RLCT does not directly apply pressure against verbalization.
+The RMCT reward depends only on the trait $T$ (and its derivatives  $p_f$ and $q$) leaving the remaining output free to vary. Where the trait $T$ is distinct from verbalization of the extraneous features driving the consistency in trait $T$, RMCT does not directly apply pressure against verbalization.
 
 \subsection{Other advantages} \todo{sumamrise into one paragraph}
 \label{sec:other-advantages}
@@ -229,7 +229,7 @@ consistency term through a mixing weight.
 \paragraph{No designated clean perturbation required.} The target
 rate $q$ is an aggregate over an arbitrary anchor set $\mathcal{A}$,
 so the method does not require a privileged ``clean'' or
-``unbiased'' perturbation to imitate. This makes RLCT applicable to
+``unbiased'' perturbation to imitate. This makes RMCT applicable to
 settings where every perturbation is on equal footing, or where no
 unperturbed reference is available.
 
@@ -288,7 +288,7 @@ Appendix~\ref{app:da-wfs}.
 \subsection{Training settings}
 BCT is fine-tuned by SFT for one epoch on the 2048 BCT samples plus
 the 2048 instruction-following samples, at batch size~128 (32
-optimisation steps). RLCT is trained with GRPO for one epoch over 64
+optimisation steps). RMCT is trained with GRPO for one epoch over 64
 prompts at batch size~4 prompts per update (16 update steps); each
 prompt is expanded into a group of $|\mathcal{F}|=2$ perturbations
 (biased and unbiased) with $N=128$ rollouts per perturbation, and the
@@ -326,10 +326,10 @@ verbalises the perturbation (scored by Google Gemma 4 31B); a drop
 in BVR after consistency training indicates obfuscation.
 
 \subsection{Baselines}
-We compare RLCT against three baselines: (i) the untrained base
+We compare RMCT against three baselines: (i) the untrained base
 model; (ii) BCT trained on a matched training set (same question
 sources, same training bias regime); and (iii) for each of BCT and
-RLCT, a \emph{control} variant trained on the same questions but with
+RMCT, a \emph{control} variant trained on the same questions but with
 the bias-inducing perturbation removed: the model is trained for
 consistency between two unbiased copies of the prompt rather than
 between the biased and unbiased prompt. The control isolates
@@ -380,22 +380,22 @@ reported in Appendix~\ref{app:control-results}.}
 On the training bias both methods substantially reduce the
 towards-bias switch rate relative to the base model. On Meta Llama
 3.1 8B Instruct, BCT reduces $\text{BSR}_{\rightarrow}$ from $0.64$
-to $0.15$ and RLCT reduces it to $0.16$; on OpenAI GPT OSS 20B, BCT
-reduces $\text{BSR}_{\rightarrow}$ from $0.30$ to $0.11$ and RLCT
-reduces it to $0.21$. RLCT therefore matches BCT's in-distribution
+to $0.15$ and RMCT reduces it to $0.16$; on OpenAI GPT OSS 20B, BCT
+reduces $\text{BSR}_{\rightarrow}$ from $0.30$ to $0.11$ and RMCT
+reduces it to $0.21$. RMCT therefore matches BCT's in-distribution
 reduction on Meta Llama 3.1 8B Instruct but reduces
 $\text{BSR}_{\rightarrow}$ less than BCT on OpenAI GPT OSS 20B.
 Improvements transfer to the five held-out bias types but not
-uniformly: BCT decreases $\text{BSR}_{\rightarrow}$ more than RLCT on
+uniformly: BCT decreases $\text{BSR}_{\rightarrow}$ more than RMCT on
 wrong-few-shot for Meta Llama 3.1 8B Instruct and on
-suggested-answer for both models, while RLCT decreases
+suggested-answer for both models, while RMCT decreases
 $\text{BSR}_{\rightarrow}$ more than BCT on post-hoc for both
 models, where BCT increases the switch rate above base on OpenAI GPT
 OSS 20B from $0.23$ to $0.33$. Averaged over the five held-out
 biases the two methods are within standard error of each other. On
-Meta Llama 3.1 8B Instruct, BCT reaches $0.38$ and RLCT reaches
+Meta Llama 3.1 8B Instruct, BCT reaches $0.38$ and RMCT reaches
 $0.36$, against a base rate of $0.45$; on OpenAI GPT OSS 20B, BCT
-reaches $0.19$ and RLCT reaches $0.18$, against a base rate of
+reaches $0.19$ and RMCT reaches $0.18$, against a base rate of
 $0.22$.
 
 \paragraph{Bias verbalisation.}
@@ -404,26 +404,26 @@ BVR on the training bias from $0.99$ to $0.22$ on Meta Llama 3.1 8B
 Instruct and from $0.56$ to $0.08$ on OpenAI GPT OSS 20B. This
 reduction transfers to the held-out biases, where the average BVR
 drops from $0.24$ to $0.07$ on Meta Llama 3.1 8B Instruct and from
-$0.41$ to $0.18$ on OpenAI GPT OSS 20B. RLCT does not measurably
-reduce BVR. On the training bias, RLCT reaches $0.89$ on Meta Llama
+$0.41$ to $0.18$ on OpenAI GPT OSS 20B. RMCT does not measurably
+reduce BVR. On the training bias, RMCT reaches $0.89$ on Meta Llama
 3.1 8B Instruct and $0.45$ on OpenAI GPT OSS 20B, against base rates
 of $0.99$ and $0.56$ respectively; the held-out averages are $0.27$
 on Meta Llama 3.1 8B Instruct and $0.37$ on OpenAI GPT OSS 20B, both
 within standard error of the base rates of $0.24$ and $0.41$. The
 largest between-method gap is on extraneous-squares for Meta Llama 3.1
-8B Instruct, where BCT reduces BVR from $0.61$ to $0.09$ while RLCT
+8B Instruct, where BCT reduces BVR from $0.61$ to $0.09$ while RMCT
 moves it to $0.76$.
 
 \section{Discussion}
 
 \paragraph{Recap.}
-We introduced Reinforcement Learning Consistency Training (RLCT), a
+We introduced Rate Matching Consistency Training (RMCT), a
 reinforcement-learning method for selective consistency training that
 enforces consistency over a designated behavioural property without
 constraining other aspects of the model's output, including the chain
 of thought. On the sycophancy benchmark of
 \citet{chua_bias-augmented_2024}, evaluated on Meta Llama 3.1 8B
-Instruct and OpenAI GPT OSS 20B, RLCT achieves bias-following
+Instruct and OpenAI GPT OSS 20B, RMCT achieves bias-following
 reductions on held-out bias types comparable to those obtained by BCT,
 while preserving the rate at which the chain of thought verbalises the
 prompt cue close to the base-model rate. BCT, by contrast,
@@ -438,7 +438,7 @@ the model to reproduce a clean-prompt response on a biased input
 penalises any output that deviates from that target, including any
 verbalisation of the cue; the resulting suppression of verbalisation,
 of approximately $56$--$70\%$ on the held-out average, is precisely
-the obfuscation that the method's design predicts. Under RLCT the
+the obfuscation that the method's design predicts. Under RMCT the
 reward depends only on the per-perturbation behaviour rates and so
 does not penalise the chain of thought regardless of its content; the
 verbalisation rate accordingly remains within standard error of the
@@ -447,7 +447,7 @@ BVR collapse under BCT indicates that the obfuscation pressure is
 not specific to the trained bias type. A practical consequence is
 that a verbalisation-rate monitor calibrated on the base model would
 fail to flag bias-driven answers under BCT, while remaining
-calibrated under RLCT.
+calibrated under RMCT.
 
 \paragraph{Comparison with the original BCT results.}
 The reductions in $\text{BSR}_{\rightarrow}$ that we obtain under BCT
@@ -463,7 +463,7 @@ evaluation difficulty, training-data difficulty, and the gap
 between the two; we leave these to future work.
 
 \paragraph{In-distribution bias-following on OpenAI GPT OSS 20B.}
-On the trained distractor-argument bias, RLCT reduces
+On the trained distractor-argument bias, RMCT reduces
 $\text{BSR}_{\rightarrow}$ less than BCT on OpenAI GPT OSS 20B
 ($0.21$ versus $0.11$, against a base rate of $0.30$), whereas on
 Meta Llama 3.1 8B Instruct the two methods reach the same reduction
@@ -471,7 +471,7 @@ within standard error. We offer three non-exclusive explanations for
 the smaller in-distribution reduction on OpenAI GPT OSS 20B. First,
 the comparatively low base rate of bias-following on this model
 yields advantages of correspondingly small magnitude under the GRPO
-objective, slowing optimisation. Second, the RLCT regime in our
+objective, slowing optimisation. Second, the RMCT regime in our
 configuration trains for only sixteen update steps, which may be
 insufficient to reach the floor accessible on this model. Third,
 the initial policy may already lie close to a local optimum on this
@@ -482,7 +482,7 @@ statistics during training.
 
 \paragraph{Out-of-distribution transfer.}
 Despite the smaller in-distribution reduction on OpenAI GPT OSS 20B,
-the average held-out $\text{BSR}_{\rightarrow}$ obtained by RLCT is
+the average held-out $\text{BSR}_{\rightarrow}$ obtained by RMCT is
 within standard error of that obtained by BCT on this model. We
 record this as an empirical observation and do not attempt to
 identify its mechanism in the present work.
@@ -492,7 +492,7 @@ Among the held-out bias types, post-hoc is the only one expressed
 across multiple turns; the remaining biases are single-turn
 perturbations of the prompt. On OpenAI GPT OSS 20B, a reasoning
 model, BCT increases $\text{BSR}_{\rightarrow}$ above the base rate
-on post-hoc (from $0.23$ to $0.33$), whereas RLCT does not. On Meta
+on post-hoc (from $0.23$ to $0.33$), whereas RMCT does not. On Meta
 Llama 3.1 8B Instruct, a non-reasoning model, BCT does not exhibit
 this misgeneralisation, and the original BCT results of
 \citet{chua_bias-augmented_2024} -- obtained on non-reasoning models
@@ -517,7 +517,7 @@ metrics without tripling the rollout budget required to obtain it,
 and forecloses learning-rate cherry-picking. The remaining
 configuration choices -- the BCT supervised-sample budget, the
 inclusion of the auxiliary instruction-following samples and the
-BCT batch size; and the RLCT rollout count, batch size, and
+BCT batch size; and the RMCT rollout count, batch size, and
 KL-penalty coefficient -- were selected on hyperparameter-tuning
 splits prior to the held-out evaluations reported here. These
 tuning splits do not overlap with the training or evaluation
@@ -525,13 +525,13 @@ datasets used for the reported experiments, and post-hoc was
 excluded from the tuning evaluations so as not to inflate its
 apparent transfer.
 
-\paragraph{Data efficiency vs. compute.} RLCT extracts a learning
+\paragraph{Data efficiency vs. compute.} RMCT extracts a learning
 signal from sample-level variation within each group of trajectories,
 without requiring a curated clean-prompt target response per training
-example as BCT does. This can make RLCT more data-efficient than BCT
+example as BCT does. This can make RMCT more data-efficient than BCT
 when target responses are expensive to produce or unavailable. The
 tradeoff is compute: each training input requires sampling
-$|\mathcal{F}|\cdot N$ trajectories per update, making RLCT
+$|\mathcal{F}|\cdot N$ trajectories per update, making RMCT
 substantially more computationally heavy per step than supervised BCT.
 
 \paragraph{Limitations and future work.}
@@ -570,12 +570,12 @@ alternatively, report monitorability under monitors that lack such
 privileged knowledge.
 
 \section{Conclusion}
-We introduced Reinforcement Learning Consistency Training (RLCT), a
+We introduced Rate Matching Consistency Training (RMCT), a
 method for selective consistency training that enforces consistency
 only over a designated behavioural property of the response and leaves
 the rest of the output, including the chain of thought, unconstrained.
 On the sycophancy benchmark of \citet{chua_bias-augmented_2024},
-evaluated on Meta Llama 3.1 8B Instruct and OpenAI GPT OSS 20B, RLCT
+evaluated on Meta Llama 3.1 8B Instruct and OpenAI GPT OSS 20B, RMCT
 matches BCT's reduction in towards-bias switching on held-out bias
 types while preserving the rate at which the chain of thought
 verbalises the prompt cue close to the base-model rate; BCT, by
@@ -584,9 +584,9 @@ trained and the held-out biases. We read this divergence as direct
 empirical evidence of the obfuscation pressure that motivates
 selective consistency training: a verbalisation-rate monitor
 calibrated on the base model would fail to flag bias-driven answers
-under BCT, while remaining calibrated under RLCT. By severing the
+under BCT, while remaining calibrated under RMCT. By severing the
 link between behavioural consistency and chain-of-thought content,
-RLCT offers a path to consistency training that does not trade
+RMCT offers a path to consistency training that does not trade
 behavioural robustness against monitorability.
 
 \bibliography{references, ai_safety}
@@ -642,7 +642,7 @@ All training uses LoRA adapters of rank~8.
 
 \paragraph{BCT.} A midway checkpoint is saved every 16 steps.
 
-\paragraph{RLCT.} Rollouts are sampled at temperature~1.0 with up to
+\paragraph{RMCT.} Rollouts are sampled at temperature~1.0 with up to
 20{,}480 generated tokens. The KL penalty to a fixed reference policy
 is~0.05 and the policy update uses the standard PPO clipped objective.
 
@@ -655,10 +655,10 @@ budget.
 \section{Control results}
 \label{app:control-results}
 
-The control variants -- BCT trained against an unbiased target and RLCT
+The control variants -- BCT trained against an unbiased target and RMCT
 trained with two unbiased copies of the prompt -- are shown alongside
 the consistency-trained runs as hatched bars (\textbf{BCT Control},
-\textbf{RLCT Control}) in every appendix figure. They isolate the
+\textbf{RMCT Control}) in every appendix figure. They isolate the
 effect of fine-tuning on unbiased data alone from the effect of the
 consistency objective. Across the switch-rate plots
 (Figures~\ref{fig:app-pro-bsr}--\ref{fig:app-total-bsr-unverb}) the
@@ -671,8 +671,8 @@ The controls also rule out an obfuscation null hypothesis for BCT.
 Controls preserve bias verbalisation near the base rate
 (Figure~\ref{fig:app-ba}), so the BVR collapse seen for BCT
 proper is specifically attributable to training the model to match a
-clean-prompt response on biased inputs. The RLCT controls likewise
-leave BVR near base, ruling out the alternative that RLCT happens to
+clean-prompt response on biased inputs. The RMCT controls likewise
+leave BVR near base, ruling out the alternative that RMCT happens to
 boost verbalisation for unrelated reasons.
 
 \section{Switch-rate breakdowns}
@@ -700,11 +700,11 @@ towards-bias switching and Figure~\ref{fig:app-total-bsr} largely
 tracks Figure~\ref{fig:app-pro-bsr}. Two patterns are worth
 flagging. First, on Meta Llama 3.1 8B Instruct, BCT raises
 $\text{BSR}_{\leftarrow}$ on the trained DA bias to roughly twice
-the base rate while RLCT leaves it unchanged: BCT trains a
+the base rate while RMCT leaves it unchanged: BCT trains a
 directional response, namely always pick the unbiased answer,
 rather than a property of consistency. Second, on OpenAI GPT OSS
 20B, $\text{BSR}_{\leftarrow}$ stays near base for both methods, so
-the small reduction in $\text{BSR}_{\rightarrow}$ for RLCT relative
+the small reduction in $\text{BSR}_{\rightarrow}$ for RMCT relative
 to the base translates into a similarly small reduction in
 $\text{BSR}_{\text{tot}}$.
 
@@ -712,7 +712,7 @@ The DA+WFS regime (bottom rows) lowers $\text{BSR}_{\rightarrow}$
 further on the two trained biases for both methods, with held-out
 averages within standard error of the DA-only regime: BCT reduces
 $\text{BSR}_{\rightarrow}$ on wrong-few-shot to within standard error
-of zero for both models, RLCT reduces wrong-few-shot
+of zero for both models, RMCT reduces wrong-few-shot
 $\text{BSR}_{\rightarrow}$ by a smaller amount, and the held-out
 averages remain within standard error of each other.
 
@@ -767,7 +767,7 @@ We split each question by whether the model verbalised the bias in
 its chain of thought on the biased prompt. The verbalised and
 unverbalised subsets per condition have very different sample sizes:
 BCT verbalises rarely, so the verbalised plot has small $n$ for BCT,
-while the unverbalised plot has small $n$ for RLCT and the base
+while the unverbalised plot has small $n$ for RMCT and the base
 model on biases the model habitually verbalises, for example
 distractor argument on Meta Llama 3.1 8B Instruct, where the base
 verbalises in over $99\%$ of cases. The per-bar $n$ counts annotated
@@ -781,13 +781,13 @@ same qualitative picture and are omitted to save space.
 
 \paragraph{Verbalised subset.}
 Figure~\ref{fig:app-pro-bsr-verb} restricts to questions where the
-biased-prompt chain of thought verbalised the cue. For RLCT and
+biased-prompt chain of thought verbalised the cue. For RMCT and
 the base model the verbalised subset still shows substantial bias
 following. On Meta Llama 3.1 8B Instruct the held-out-average
-towards-bias rate is $0.49$ for RLCT and $0.45$ for the base; on
+towards-bias rate is $0.49$ for RMCT and $0.45$ for the base; on
 OpenAI GPT OSS 20B the rate is $0.21$ for both. These rates are
 indistinguishable from the unconditional rates in the main text,
-ruling out the alternative that the RLCT reduction in
+ruling out the alternative that the RMCT reduction in
 $\text{BSR}_{\rightarrow}$ comes from the model noticing the bias
 more often and only switching when it did not: even when it does
 notice, it follows the bias at the base rate and is moved by the
@@ -806,14 +806,14 @@ argument and extraneous-squares on Meta Llama 3.1 8B Instruct, the
 unverbalised subset for the base model has very low $n$ but a high
 $\text{BSR}_{\rightarrow}$, so the few times the model fails to
 verbalise the cue it is much more
-likely to follow it. RLCT in this subset behaves similarly to BCT:
+likely to follow it. RMCT in this subset behaves similarly to BCT:
 when the model has not verbalised the cue, both methods reduce
 following at roughly comparable rates. The total switch rate
 (Figure~\ref{fig:app-total-bsr-unverb}) again mirrors the
 towards-bias plot.
 
 The combination of these two splits supports our reading of the
-main-text BVR result. RLCT preserves verbalisation and reduces
+main-text BVR result. RMCT preserves verbalisation and reduces
 following both when the cue is verbalised and when it is not; BCT
 reduces following primarily by routing the model into the unverbalised
 regime.
@@ -896,10 +896,10 @@ moved the model.
 
 Figure~\ref{fig:app-ba} reproduces the main-text result at higher
 resolution and across both training regimes: BCT reduces BVR on the
-trained bias and on the held-out average, while RLCT does not move
+trained bias and on the held-out average, while RMCT does not move
 BVR away from the base rate by more than a binomial standard error
 in either training regime. The DA+WFS BCT run yields a larger BVR
-reduction on its trained biases than the DA-only run; DA+WFS RLCT
+reduction on its trained biases than the DA-only run; DA+WFS RMCT
 remains within standard error of base.
 
 Figure~\ref{fig:app-ba-changed} is the more behaviourally meaningful
@@ -907,15 +907,15 @@ view: it asks whether, on the questions where adding the bias did
 swing the model's answer, the model said so in its reasoning. On
 Meta Llama 3.1 8B Instruct, the held-out-average conditional BVR is
 $0.30$ for the base model and $0.06$ under BCT, but stays at $0.30$
-under RLCT; on OpenAI GPT OSS 20B it drops from $0.42$ to $0.20$
-under BCT and stays at $0.41$ under RLCT. Equivalently, under BCT,
+under RMCT; on OpenAI GPT OSS 20B it drops from $0.42$ to $0.20$
+under BCT and stays at $0.41$ under RMCT. Equivalently, under BCT,
 on the questions where the bias was operative, the model now reasons
 as if no bias were present in approximately $80\%$ of cases on Meta
 Llama 3.1 8B Instruct and approximately $50\%$ of cases on OpenAI
-GPT OSS 20B, whereas under RLCT this rate is within standard error
+GPT OSS 20B, whereas under RMCT this rate is within standard error
 of the base rate. An verbalisation-rate monitor calibrated on the
 base model would therefore fail to flag the bias-driven answers
-under BCT, but not under RLCT.
+under BCT, but not under RMCT.
 
 \begin{figure*}[t]
 \centering
@@ -957,19 +957,19 @@ Figure~\ref{fig:app-acc-biased}, and accuracy under the unbiased
 prompt in Figure~\ref{fig:app-acc-unbiased}. HLE is intentionally
 hard, so absolute accuracies remain at $\lesssim 0.25$ throughout.
 
-Under the biased prompt, BCT and RLCT both leave accuracy within
+Under the biased prompt, BCT and RMCT both leave accuracy within
 standard error of the base model on Meta Llama 3.1 8B Instruct and
 on OpenAI GPT OSS 20B across all held-out biases and both training
 regimes. Where the consistency-trained runs reduce
 $\text{BSR}_{\rightarrow}$, they do not do so by trading correctness
 in either direction. Under the unbiased prompt the differences are
-small but consistent. On Meta Llama 3.1 8B Instruct, RLCT reaches
+small but consistent. On Meta Llama 3.1 8B Instruct, RMCT reaches
 $0.18$, BCT reaches $0.16$, and the base reaches $0.13$; on OpenAI
-GPT OSS 20B, BCT reaches $0.14$, RLCT reaches $0.10$, and the base
+GPT OSS 20B, BCT reaches $0.14$, RMCT reaches $0.10$, and the base
 reaches $0.11$. In every case the differences sit within the
 binomial standard error. The unbiased-prompt bias-match rate in
 Figure~\ref{fig:app-bmr-unbiased} is reported for completeness: on
-the unbiased prompt, RLCT does not raise the rate at which the model
+the unbiased prompt, RMCT does not raise the rate at which the model
 picks the bias-target option above base, so the bias-following
 reduction is not produced by inducing a generic preference against
 those options.
@@ -1017,24 +1017,24 @@ pooled across three learning rates.}
 
 \section{Distractor-argument + wrong-few-shot training regime}
 \label{app:da-wfs}
-We additionally trained BCT and RLCT on a mixture of
+We additionally trained BCT and RMCT on a mixture of
 distractor-argument and wrong-few-shot prompts (DA+WFS) on
 LogiQA+HellaSwag, with all other settings matching the DA-only setup
 of Section~\ref{sec:experiments}. The DA+WFS BCT run uses the same
 training-data scale per bias, giving roughly $48$ optimisation steps
-at batch size~$128$. RLCT uses an identical configuration to the
+at batch size~$128$. RMCT uses an identical configuration to the
 DA-only setup with both bias types sampled in the prompt mix.
 Per-metric DA+WFS results are shown as the second row of every
 figure in Appendices~\ref{app:switch-rates}, \ref{app:ba}, and
 \ref{app:accuracy}. The qualitative picture matches the DA-only
-regime: BCT collapses BVR on its trained biases while RLCT preserves
+regime: BCT collapses BVR on its trained biases while RMCT preserves
 it, and the held-out switch-rate reductions are comparable between
 the two methods.
 
 \section{Anchor reward}
 \label{app:anchor}
 
-To prevent the target rate $q$ from drifting as the policy updates, RLCT
+To prevent the target rate $q$ from drifting as the policy updates, RMCT
 supports an optional anchor reward that ties $q$ to the same target statistic
 $q_0 = Q(\{p^{(0)}_f\}_{f \in \mathcal{A}})$ computed under the initial
 policy $\pi_0$ (a checkpoint taken before consistency training begins), where
