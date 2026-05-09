@@ -96,6 +96,12 @@ where LLM behavior is affected by whether the model infers the input to be part 
 
 One approach to mitigate the behavioural incosistency driven by extraneous input features is to remove these features from the input or the internal representations induced by the input \citep{nguyen_probing_2025, hua_steering_2025}. However, isolating and removing such features in practice is difficult: they emerge from many small choices in word choice, register, and structure rather than from any single removable span, LLMs readily extract user attributes such as age from these incidental textual cues \citep{chen_designing_2024, needham_llms_2025}, and our interpretability tools cannot yet reliably remove them from internal representations. Another approach is Consistency Training: training LLMs to behave consistently regardless of such features being present in the input. We focus on the second approach in this work.
 
+Existing consistency-training methods constrain either the entire output (Bias-Augmented Consistency Training, BCT) or internal activations (Activation Consistency Training, ACT) to match a clean-prompt reference. This also constrains verbalisation of the perturbation, which can misgeneralise to \emph{obfuscation}: the model suppressing mention of a cue while remaining influenced by it. This undermines monitoring and auditing in settings such as prompt-injection robustness \todo{cite anthropic / openai} or evaluation gaming \todo{citation}, where the chain of thought is itself the object of inspection. These concerns motivate \emph{selective consistency training}: enforcing consistency only on the behavioural properties of interest, leaving the rest of the output, including any verbalisation of the extraneous input features, free to vary. We introduce \emph{Reinforcement Learning Consistency Training} (RLCT), which implements this by computing the rate of the target behaviour under each input perturbation and rewarding trajectories that move this rate toward a target.
+
+\suggestion{Prompt-injection todo: \citep{wallace_instruction_2024,anthropic_prompt_injection_2025} -- Wallace et al.\ (OpenAI instruction-hierarchy training) and Anthropic's Nov 2025 post on RL-based prompt-injection training of Claude. Both train the model itself for prompt-injection robustness, matching the ``training the model'' framing.}
+
+\suggestion{Eval-gaming todo: \citep{schoen_stress_2025} -- Schoen et al., ``Stress Testing Deliberative Alignment for Anti-Scheming Training''. The paper's own concern -- that anti-scheming training may be confounded with situational awareness -- aligns directly with the obfuscation worry raised here.}
+
 \subsection{Summary of contributions}
 \begin{itemize}
     \item We introduce \emph{Reinforcement Learning Consistency Training}
@@ -129,13 +135,6 @@ BCT nonetheless remains the state-of-the-art consistency-training method.
 
 \paragraph{Existing applications.}
 Consistency training has previously been applied to reduce sycophancy \citep{chua_bias-augmented_2024}, increase jailbreak robustness \citep{irpan_consistency_2025}, and reducing persona drift \citep{shah_frustration_2026} in LLMs. \citet{irpan_consistency_2025} report BCT and ACT lead to similar decrease in LLM sycophancy, while BCT leads to a larger decrease in jailbreak susceptibility.
-
-\paragraph{The obfuscation problem.}
-Constraining the entire output (BCT) or internal activations (ACT) also constrains verbalisation of the perturbation, which can misgeneralise to \emph{obfuscation}: the model suppressing mention of a cue while remaining influenced by it. This undermines monitoring and auditing in settings such as prompt-injection robustness \todo{cite anthropic / openai} or evaluation gaming \todo{citation}, where the chain of thought is itself the object of inspection. These concerns motivate \emph{selective consistency training}: enforcing consistency only on the behavioural properties of interest, leaving the rest of the output, including any verbalisation of the extraneous input features, free to vary. We introduce \emph{Reinforcement Learning Consistency Training} (RLCT), which implements this by computing the rate of the target behaviour under each input perturbation and rewarding trajectories that move this rate toward a target.
-
-\suggestion{Prompt-injection todo: \citep{wallace_instruction_2024,anthropic_prompt_injection_2025} -- Wallace et al.\ (OpenAI instruction-hierarchy training) and Anthropic's Nov 2025 post on RL-based prompt-injection training of Claude. Both train the model itself for prompt-injection robustness, matching the ``training the model'' framing.}
-
-\suggestion{Eval-gaming todo: \citep{schoen_stress_2025} -- Schoen et al., ``Stress Testing Deliberative Alignment for Anti-Scheming Training''. The paper's own concern -- that anti-scheming training may be confounded with situational awareness -- aligns directly with the obfuscation worry raised here.}
 
 \section{Reinforcement Learning Consistency Training}
 
