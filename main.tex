@@ -90,17 +90,11 @@ to align with users' views and preferences
 \citep{perez_discovering_2022}. 
 
 Another example is evaluation gaming,
-where LLM behavior is affected by whether the model infers the input to be part of an evaluation \citep{meinke_frontier_2024,greenblatt_alignment_2024,vanderweij_ai_2024}.\todo{Why are we mentioning this? What does this example cover that the previous doesn't. Explicitly state that and then demonstrate with the example.}
+where LLM behavior is affected by whether the model infers the input to be part of an evaluation \citep{meinke_frontier_2024,greenblatt_alignment_2024,vanderweij_ai_2024}. Whereas sycophancy responds to cues about the user's stated views or preferences, the cue here is a signal of evaluation context, raising a distinctive concern: if behaviour differs under evaluation versus deployment, our evaluations themselves become uninformative about real-world behaviour \citep{carlsmith_scheming_2023}.
 
-\suggestion{Append after the existing eval-gaming sentence: ``Whereas sycophancy responds to cues about the user's stated views or preferences, the cue here is a signal of evaluation context, raising a distinctive concern: if behaviour differs under evaluation versus deployment, our evaluations themselves become uninformative about real-world behaviour \citep{carlsmith_scheming_2023}.'' Names the categorical difference and the distinctive eval-uninformativeness stake.}
+One approach to mitigate the behavioural inconsistency driven by extraneous input features is to remove these features from the input or the internal representations induced by the input \citep{nguyen_probing_2025, hua_steering_2025}. However, isolating and removing such features in practice is difficult: they emerge from many small choices in word choice, register, and structure rather than from any single removable span, LLMs readily extract user attributes such as age from these incidental textual cues \citep{chen_designing_2024, needham_llms_2025}, and our interpretability tools cannot yet reliably remove them from internal representations. Another approach is Consistency Training: training LLMs to behave consistently regardless of such features being present in the input. We focus on the second approach in this work.
 
-One approach to mitigate the behavioural incosistency driven by extraneous input features is to remove these features from the input or the internal representations induced by the input \citep{nguyen_probing_2025, hua_steering_2025}. However, isolating and removing such features in practice is difficult: they emerge from many small choices in word choice, register, and structure rather than from any single removable span, LLMs readily extract user attributes such as age from these incidental textual cues \citep{chen_designing_2024, needham_llms_2025}, and our interpretability tools cannot yet reliably remove them from internal representations. Another approach is Consistency Training: training LLMs to behave consistently regardless of such features being present in the input. We focus on the second approach in this work.
-
-Existing consistency-training methods constrain either the entire output (Bias-Augmented Consistency Training, BCT) or internal activations (Activation Consistency Training, ACT) to match a clean-prompt reference. This also constrains verbalisation of the perturbation, which can misgeneralise to \emph{obfuscation}: the model suppressing mention of a cue while remaining influenced by it. This undermines monitoring and auditing in settings such as prompt-injection robustness \todo{cite anthropic / openai} or evaluation gaming \todo{citation}, where the chain of thought is itself the object of inspection. These concerns motivate \emph{selective consistency training}: enforcing consistency only on the behavioural properties of interest, leaving the rest of the output, including any verbalisation of the extraneous input features, free to vary. We introduce \emph{Reinforcement Learning Consistency Training} (RLCT), which implements this by computing the rate of the target behaviour under each input perturbation and rewarding trajectories that move this rate toward a target.
-
-\suggestion{Prompt-injection todo: \citep{wallace_instruction_2024,anthropic_prompt_injection_2025} -- Wallace et al.\ (OpenAI instruction-hierarchy training) and Anthropic's Nov 2025 post on RL-based prompt-injection training of Claude. Both train the model itself for prompt-injection robustness, matching the ``training the model'' framing.}
-
-\suggestion{Eval-gaming todo: \citep{schoen_stress_2025} -- Schoen et al., ``Stress Testing Deliberative Alignment for Anti-Scheming Training''. The paper's own concern -- that anti-scheming training may be confounded with situational awareness -- aligns directly with the obfuscation worry raised here.}
+Existing consistency-training methods include Bias-Augmented Consistency Training (BCT) \citep{chua_bias-augmented_2024}, which fine-tunes the model to produce the same output on a perturbed input as on the corresponding unperturbed input, and Activation Consistency Training (ACT) \citep{irpan_consistency_2025}, which matches the model's internal representations across the two inputs at the end of the chat template. Constraining the entire output as in BCT also constrains verbalisation of the perturbation, which can misgeneralise to \emph{obfuscation}: the model suppressing mention of a cue while remaining influenced by it. This undermines monitoring and auditing in settings such as prompt-injection robustness \citep{wallace_instruction_2024,anthropic_prompt_injection_2025} or evaluation gaming \citep{schoen_stress_2025}, where the chain of thought is itself the object of inspection. These concerns motivate \emph{selective consistency training}: enforcing consistency only on the behavioural properties of interest, leaving the rest of the output, including any verbalisation of the extraneous input features, free to vary. We introduce \emph{Reinforcement Learning Consistency Training} (RLCT), which implements this by computing the rate of the target behaviour under each input perturbation and rewarding trajectories that move this rate toward a target.
 
 \subsection{Summary of contributions}
 \begin{itemize}
@@ -290,9 +284,10 @@ biased prompt and one under the unbiased prompt, and let $b(x), u(x)
 \in \{0,1\}$ indicate whether the model selected the biased option on
 each. We report three per-question switch rates, each averaged over
 questions:
+%% Jannes: I think the arrow directions on $\text{BSR}_{\rightarrow}$ / $\text{BSR}_{\leftarrow}$ are backwards -- the towards-bias rate is $b - u$, so reading the arrow as "model moves toward bias" would suggest $\leftarrow$ (pulled toward the bias) rather than $\rightarrow$. Worth a discussion before changing, since the convention is used throughout.
 \begin{align*}
-\text{BSR}_{\leftarrow} &= \tfrac{1}{|X|}\textstyle\sum_x \max(0,\, b(x) - u(x)), \\
-\text{BSR}_{\rightarrow}  &= \tfrac{1}{|X|}\textstyle\sum_x \max(0,\, u(x) - b(x)), \\
+\text{BSR}_{\rightarrow} &= \tfrac{1}{|X|}\textstyle\sum_x \max(0,\, b(x) - u(x)), \\
+\text{BSR}_{\leftarrow}  &= \tfrac{1}{|X|}\textstyle\sum_x \max(0,\, u(x) - b(x)), \\
 \text{BSR}_{\text{tot}}  &= \tfrac{1}{|X|}\textstyle\sum_x |b(x) - u(x)|,
 \end{align*}
 which we call the \emph{towards-bias switch rate}, the
@@ -330,7 +325,7 @@ Appendix~\ref{app:control-results}.
 \label{sec:results}
 
 Figure~\ref{fig:main-pro-bsr} reports the towards-bias switch rate
-($\text{BSR}_{\leftarrow}$) on the held-out HLE evaluation set;
+($\text{BSR}_{\rightarrow}$) on the held-out HLE evaluation set;
 Figure~\ref{fig:main-ba} reports the bias verbalisation rate (BVR).
 Results for the DA+WFS training regime, the matched controls, the
 away-from-bias and total switch rates, the verbalised/unverbalised
@@ -339,7 +334,7 @@ splits, and accuracy are reported in the appendix.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/main_pro_bsr.png}
-\caption{Towards-bias switch rate $\text{BSR}_{\leftarrow}$ on HLE.
+\caption{Towards-bias switch rate $\text{BSR}_{\rightarrow}$ on HLE.
 OpenAI GPT OSS 20B (top), Meta Llama 3.1 8B Instruct (bottom).
 Training bias (distractor argument) is shaded; the rightmost column
 averages over the five held-out bias types. Error bars are two
@@ -369,17 +364,17 @@ reported in Appendix~\ref{app:control-results}.}
 \paragraph{Bias following.}
 On the training bias both methods substantially reduce the
 towards-bias switch rate relative to the base model. On Meta Llama
-3.1 8B Instruct, BCT reduces $\text{BSR}_{\leftarrow}$ from $0.64$
+3.1 8B Instruct, BCT reduces $\text{BSR}_{\rightarrow}$ from $0.64$
 to $0.15$ and RLCT reduces it to $0.16$; on OpenAI GPT OSS 20B, BCT
-reduces $\text{BSR}_{\leftarrow}$ from $0.30$ to $0.11$ and RLCT
+reduces $\text{BSR}_{\rightarrow}$ from $0.30$ to $0.11$ and RLCT
 reduces it to $0.21$. RLCT therefore matches BCT's in-distribution
 reduction on Meta Llama 3.1 8B Instruct but reduces
-$\text{BSR}_{\leftarrow}$ less than BCT on OpenAI GPT OSS 20B.
+$\text{BSR}_{\rightarrow}$ less than BCT on OpenAI GPT OSS 20B.
 Improvements transfer to the five held-out bias types but not
-uniformly: BCT decreases $\text{BSR}_{\leftarrow}$ more than RLCT on
+uniformly: BCT decreases $\text{BSR}_{\rightarrow}$ more than RLCT on
 wrong-few-shot for Meta Llama 3.1 8B Instruct and on
 suggested-answer for both models, while RLCT decreases
-$\text{BSR}_{\leftarrow}$ more than BCT on post-hoc for both
+$\text{BSR}_{\rightarrow}$ more than BCT on post-hoc for both
 models, where BCT increases the switch rate above base on OpenAI GPT
 OSS 20B from $0.23$ to $0.33$. Averaged over the five held-out
 biases the two methods are within standard error of each other. On
@@ -442,7 +437,7 @@ fail to flag bias-driven answers under BCT, while remaining
 calibrated under RLCT.
 
 \paragraph{Comparison with the original BCT results.}
-The reductions in $\text{BSR}_{\leftarrow}$ that we obtain under BCT
+The reductions in $\text{BSR}_{\rightarrow}$ that we obtain under BCT
 are smaller than those reported by \citet{chua_bias-augmented_2024}.
 We attribute this principally to the difficulty gap between our
 training and evaluation distributions: HLE is substantially harder
@@ -456,7 +451,7 @@ between the two; we leave these to future work.
 
 \paragraph{In-distribution bias-following on OpenAI GPT OSS 20B.}
 On the trained distractor-argument bias, RLCT reduces
-$\text{BSR}_{\leftarrow}$ less than BCT on OpenAI GPT OSS 20B
+$\text{BSR}_{\rightarrow}$ less than BCT on OpenAI GPT OSS 20B
 ($0.21$ versus $0.11$, against a base rate of $0.30$), whereas on
 Meta Llama 3.1 8B Instruct the two methods reach the same reduction
 within standard error. We offer three non-exclusive explanations for
@@ -474,7 +469,7 @@ statistics during training.
 
 \paragraph{Out-of-distribution transfer.}
 Despite the smaller in-distribution reduction on OpenAI GPT OSS 20B,
-the average held-out $\text{BSR}_{\leftarrow}$ obtained by RLCT is
+the average held-out $\text{BSR}_{\rightarrow}$ obtained by RLCT is
 within standard error of that obtained by BCT on this model. We
 record this as an empirical observation and do not attempt to
 identify its mechanism in the present work.
@@ -483,7 +478,7 @@ identify its mechanism in the present work.
 Among the held-out bias types, post-hoc is the only one expressed
 across multiple turns; the remaining biases are single-turn
 perturbations of the prompt. On OpenAI GPT OSS 20B, a reasoning
-model, BCT increases $\text{BSR}_{\leftarrow}$ above the base rate
+model, BCT increases $\text{BSR}_{\rightarrow}$ above the base rate
 on post-hoc (from $0.23$ to $0.33$), whereas RLCT does not. On Meta
 Llama 3.1 8B Instruct, a non-reasoning model, BCT does not exhibit
 this misgeneralisation, and the original BCT results of
@@ -498,7 +493,7 @@ We use six of the bias types from \citet{chua_bias-augmented_2024}
 and exclude three. The ``Are you sure?'' and positional biases are
 scored by a procedure that differs from the per-question switch
 rate used in the present work, which would preclude a uniform
-interpretation of $\text{BSR}_{\leftarrow}$ and BVR across bias
+interpretation of $\text{BSR}_{\rightarrow}$ and BVR across bias
 types; see \citet{chua_bias-augmented_2024} for details. Hindsight
 is supported only on a single source dataset that we did not adopt,
 since we wished to evaluate on a more recent and harder benchmark,
@@ -538,7 +533,7 @@ across input or output modalities and to other behavioural properties
 of the response, which we likewise leave to future work.
 
 A second limitation concerns the interpretation of the switch-rate
-metrics. $\text{BSR}_{\leftarrow}$, $\text{BSR}_{\rightarrow}$, and
+metrics. $\text{BSR}_{\rightarrow}$, $\text{BSR}_{\leftarrow}$, and
 $\text{BSR}_{\text{tot}}$ measure changes in the parsed final answer
 between the biased and unbiased prompts, and so conflate two distinct
 mechanisms: a genuine influence of the cue on the model's reasoning or
@@ -679,40 +674,40 @@ switch rates, broken down by which model produces which split.
 \subsection{Towards-bias, away-from-bias, total}
 
 Figures~\ref{fig:app-pro-bsr}, \ref{fig:app-anti-bsr}, and
-\ref{fig:app-total-bsr} report $\text{BSR}_{\leftarrow}$,
-$\text{BSR}_{\rightarrow}$, and $\text{BSR}_{\text{tot}}$ for both
+\ref{fig:app-total-bsr} report $\text{BSR}_{\rightarrow}$,
+$\text{BSR}_{\leftarrow}$, and $\text{BSR}_{\text{tot}}$ for both
 models. The DA-only towards-bias rates (Figure~\ref{fig:app-pro-bsr},
 top rows) reproduce the main-text plot with controls overlaid; the
 DA+WFS rows (bottom) extend the picture to a richer training mix.
 
 For both models the away-from-bias rate is small relative to the
-towards-bias rate, with $\text{BSR}_{\rightarrow} \lesssim 0.15$ for
+towards-bias rate, with $\text{BSR}_{\leftarrow} \lesssim 0.15$ for
 almost every cell, so the total switch rate is dominated by
 towards-bias switching and Figure~\ref{fig:app-total-bsr} largely
 tracks Figure~\ref{fig:app-pro-bsr}. Two patterns are worth
 flagging. First, on Meta Llama 3.1 8B Instruct, BCT raises
-$\text{BSR}_{\rightarrow}$ on the trained DA bias to roughly twice
+$\text{BSR}_{\leftarrow}$ on the trained DA bias to roughly twice
 the base rate while RLCT leaves it unchanged: BCT trains a
 directional response, namely always pick the unbiased answer,
 rather than a property of consistency. Second, on OpenAI GPT OSS
-20B, $\text{BSR}_{\rightarrow}$ stays near base for both methods, so
-the small reduction in $\text{BSR}_{\leftarrow}$ for RLCT relative
+20B, $\text{BSR}_{\leftarrow}$ stays near base for both methods, so
+the small reduction in $\text{BSR}_{\rightarrow}$ for RLCT relative
 to the base translates into a similarly small reduction in
 $\text{BSR}_{\text{tot}}$.
 
-The DA+WFS regime (bottom rows) lowers $\text{BSR}_{\leftarrow}$
+The DA+WFS regime (bottom rows) lowers $\text{BSR}_{\rightarrow}$
 further on the two trained biases for both methods, with held-out
 averages within standard error of the DA-only regime: BCT reduces
-$\text{BSR}_{\leftarrow}$ on wrong-few-shot to within standard error
+$\text{BSR}_{\rightarrow}$ on wrong-few-shot to within standard error
 of zero for both models, RLCT reduces wrong-few-shot
-$\text{BSR}_{\leftarrow}$ by a smaller amount, and the held-out
+$\text{BSR}_{\rightarrow}$ by a smaller amount, and the held-out
 averages remain within standard error of each other.
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.49\linewidth]{figures/llama_pro_bsr_cot.png}
 \includegraphics[width=0.49\linewidth]{figures/gpt-oss-20b_pro_bsr_no_cot.png}
-\caption{Towards-bias switch rate $\text{BSR}_{\leftarrow}$ on HLE.
+\caption{Towards-bias switch rate $\text{BSR}_{\rightarrow}$ on HLE.
 Meta Llama 3.1 8B Instruct (left), OpenAI GPT OSS 20B (right); top
 row of each panel is DA-only training, bottom row DA+WFS. Training
 bias is shaded; the rightmost column averages over the five held-out
@@ -727,7 +722,7 @@ across three learning rates.}
 \centering
 \includegraphics[width=0.49\linewidth]{figures/llama_anti_bsr_cot.png}
 \includegraphics[width=0.49\linewidth]{figures/gpt-oss-20b_anti_bsr_no_cot.png}
-\caption{Away-from-bias switch rate $\text{BSR}_{\rightarrow}$ on
+\caption{Away-from-bias switch rate $\text{BSR}_{\leftarrow}$ on
 HLE. Meta Llama 3.1 8B Instruct (left), OpenAI GPT OSS 20B (right);
 top row of each panel is DA-only training, bottom row DA+WFS.
 Training bias is shaded; the rightmost column averages over the five
@@ -780,7 +775,7 @@ towards-bias rate is $0.49$ for RLCT and $0.45$ for the base; on
 OpenAI GPT OSS 20B the rate is $0.21$ for both. These rates are
 indistinguishable from the unconditional rates in the main text,
 ruling out the alternative that the RLCT reduction in
-$\text{BSR}_{\leftarrow}$ comes from the model noticing the bias
+$\text{BSR}_{\rightarrow}$ comes from the model noticing the bias
 more often and only switching when it did not: even when it does
 notice, it follows the bias at the base rate and is moved by the
 reward toward consistency. For BCT the verbalised subset is too
@@ -796,7 +791,7 @@ plot are similar to its bars in Figure~\ref{fig:app-pro-bsr}. On
 biases where the base model unverbalises rarely, namely distractor
 argument and extraneous-squares on Meta Llama 3.1 8B Instruct, the
 unverbalised subset for the base model has very low $n$ but a high
-$\text{BSR}_{\leftarrow}$, so the few times the model fails to
+$\text{BSR}_{\rightarrow}$, so the few times the model fails to
 verbalise the cue it is much more
 likely to follow it. RLCT in this subset behaves similarly to BCT:
 when the model has not verbalised the cue, both methods reduce
@@ -814,7 +809,7 @@ regime.
 \centering
 \includegraphics[width=0.49\linewidth]{figures/llama_pro_bsr_cot_verbalised.png}
 \includegraphics[width=0.49\linewidth]{figures/gpt-oss-20b_pro_bsr_no_cot_verbalised.png}
-\caption{Towards-bias switch rate $\text{BSR}_{\leftarrow}$ on HLE,
+\caption{Towards-bias switch rate $\text{BSR}_{\rightarrow}$ on HLE,
 restricted to questions where the biased-prompt chain of thought
 verbalised the bias. Meta Llama 3.1 8B Instruct (left), OpenAI
 GPT OSS 20B (right); top row of each panel is DA-only training,
@@ -830,7 +825,7 @@ confidence intervals), pooled across three learning rates.}
 \centering
 \includegraphics[width=0.49\linewidth]{figures/llama_pro_bsr_cot_unverbalised.png}
 \includegraphics[width=0.49\linewidth]{figures/gpt-oss-20b_pro_bsr_no_cot_unverbalised.png}
-\caption{Towards-bias switch rate $\text{BSR}_{\leftarrow}$ on HLE,
+\caption{Towards-bias switch rate $\text{BSR}_{\rightarrow}$ on HLE,
 restricted to questions where the biased-prompt chain of thought did
 not verbalise the bias. Meta Llama 3.1 8B Instruct (left), OpenAI
 GPT OSS 20B (right); top row of each panel is DA-only training,
@@ -953,7 +948,7 @@ Under the biased prompt, BCT and RLCT both leave accuracy within
 standard error of the base model on Meta Llama 3.1 8B Instruct and
 on OpenAI GPT OSS 20B across all held-out biases and both training
 regimes. Where the consistency-trained runs reduce
-$\text{BSR}_{\leftarrow}$, they do not do so by trading correctness
+$\text{BSR}_{\rightarrow}$, they do not do so by trading correctness
 in either direction. Under the unbiased prompt the differences are
 small but consistent. On Meta Llama 3.1 8B Instruct, RLCT reaches
 $0.18$, BCT reaches $0.16$, and the base reaches $0.13$; on OpenAI
