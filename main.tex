@@ -21,6 +21,7 @@
 \usetikzlibrary{positioning, calc, arrows.meta}
 
 \newcommand{\todo}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
+\newcommand{\suggestion}[1]{\textcolor{blue}{\textbf{[SUGGESTION: #1]}}}
 
 \icmltitlerunning{Reinforcement Learning Consistency Training}
 
@@ -89,8 +90,9 @@ to align with users' views and preferences
 \citep{perez_discovering_2022}. 
 
 Another example is evaluation gaming,
-where LLM behaviour is affected by whether the model "believes" the input to be
-part of an evaluation \citep{meinke_frontier_2024,greenblatt_alignment_2024,vanderweij_ai_2024}.\todo{Why are we mentioning this? What does this example cover that the previous doesn't. Explicitly state that and then demonstrate with the example.}
+where LLM behavior is affected by whether the model infers the input to be part of an evaluation \citep{meinke_frontier_2024,greenblatt_alignment_2024,vanderweij_ai_2024}.\todo{Why are we mentioning this? What does this example cover that the previous doesn't. Explicitly state that and then demonstrate with the example.}
+
+\suggestion{Append after the existing eval-gaming sentence: ``Whereas sycophancy responds to cues about the user's stated views or preferences, the cue here is a signal of evaluation context, raising a distinctive concern: if behaviour differs under evaluation versus deployment, our evaluations themselves become uninformative about real-world behaviour \citep{carlsmith_scheming_2023}.'' Names the categorical difference and the distinctive eval-uninformativeness stake.}
 
 One approach to mitigate the behavioural incosistency driven by extraneous input features is to remove these features from the input or the internal representations induced by the input \citep{nguyen_probing_2025, hua_steering_2025}. However, isolating and removing extraneous features from the input or internal representations is difficult in practice: such features are often distributed across many subtle stylistic and structural features of the input, rather than localised to a single token sequence \todo{is "to a single token sequence" necessary?} \citep{needham_llms_2025}. Another approach is Consistency Training: training LLMs to behave consistently regardless of such features being present in the input. We focus on the second approach in this work.
 
@@ -118,17 +120,23 @@ BCT nonetheless remains the state-of-the-art consistency-training method.
 
 \todo{For BCT, citation is end of paragraph, For ACT, citation is in the middle. standardise}
 
+\suggestion{Suggested BCT paragraph (cite at first mention, matching ACT):\\
+Bias-Augmented Consistency Training (BCT) trains LLMs to produce the same output on perturbed inputs as on the corresponding unperturbed input \citep{chua_bias-augmented_2024}. For each input, a response is sampled from the LLM. The LLM is then fine-tuned to produce that same response when given perturbed inputs.\\
+(ACT paragraph unchanged.)}
+
 \paragraph{Existing applications.}
 Consistency training has previously been applied to reduce sycophancy \citep{chua_bias-augmented_2024}, increase jailbreak robustness \citep{irpan_consistency_2025}, and reducing persona drift \citep{shah_frustration_2026} in LLMs. \citet{irpan_consistency_2025} report BCT and ACT lead to similar decrease in LLM sycophancy, while BCT leads to a larger decrease in jailbreak susceptibility.
 
 \subsection{The obfuscation problem and selective consistency training}
 \label{sec:novel-applications}
 
-BCT and ACT train LLMs to generate the same output or internal representations given an input with spurious features as when these features are absent from the input. This raises multiple concerns. \citet{irpan_consistency_2025} note that this training may misgeneralise to LLMs ignoring other parts of the input which may be important, such as user instructions. Furthermore, constraining the entire output or internal activations also constrains verbalisation of these input features, which may misgeneralise to \emph{obfuscation}: LLMs learning to supress verbalising these features even where these features affect their behaviour. This hampers the applicability of consistency training in problems where monitoring and auditing are important. For example, when training for prompt-injection robustness, it is especially concerning if the model learns to evade prompt-injection monitors while still following injected instructions \todo{cite anthropic / openai}. Similarly, when training to mitigate evaluation gaming \todo{citation}, indirectly training models to not verbalise evaluation awareness \citep{needham_llms_2025} would be undesirable \todo{this sentence has two unexplained terms, evaluation gaming and evaluation awareness. Can we just reference and call it a day?}.
+BCT and ACT train LLMs to generate the same output or internal representations given an input with extraneous features as when these features are absent from the input. This raises multiple concerns. \citet{irpan_consistency_2025} note that this training may misgeneralise to LLMs ignoring other parts of the input which may be important, such as user instructions. Furthermore, constraining the entire output or internal activations also constrains verbalisation of these input features, which may misgeneralise to \emph{obfuscation}: LLMs learning to supress verbalising these features even where these features affect their behaviour. This hampers the applicability of consistency training in problems where monitoring and auditing are important. For example, when training for prompt-injection robustness, it is especially concerning if the model learns to evade prompt-injection monitors while still following injected instructions \todo{cite anthropic / openai}. Similarly, when training to mitigate evaluation gaming \todo{citation}, indirectly training models to not verbalise evaluation awareness \citep{needham_llms_2025} would be undesirable \todo{this sentence has two unexplained terms, evaluation gaming and evaluation awareness. Can we just reference and call it a day?}.
 
+\suggestion{Prompt-injection todo: \citep{wallace_instruction_2024,anthropic_prompt_injection_2025} -- Wallace et al.\ (OpenAI instruction-hierarchy training) and Anthropic's Nov 2025 post on RL-based prompt-injection training of Claude. Both train the model itself for prompt-injection robustness, matching the ``training the model'' framing.}
 
+\suggestion{Eval-gaming todo: \citep{schoen_stress_2025} -- Schoen et al., ``Stress Testing Deliberative Alignment for Anti-Scheming Training''. The paper's own concern -- that anti-scheming training may be confounded with situational awareness -- aligns directly with the obfuscation worry raised here.}
 
-These concerns motivate \emph{selective consistency training}: enforcing consistency only on the behavioural properties of interest, leaving the rest of the output, including any verbalisation of the spurious input features, free to vary. We introduce \emph{Reinforcement Learning Consistency Training} (RLCT), which implements this by computing the rate of the target behaviour under each input perturbation and rewarding trajectories that.
+These concerns motivate \emph{selective consistency training}: enforcing consistency only on the behavioural properties of interest, leaving the rest of the output, including any verbalisation of the extraneous input features, free to vary. We introduce \emph{Reinforcement Learning Consistency Training} (RLCT), which implements this by computing the rate of the target behaviour under each input perturbation and rewarding trajectories that.
 
 \subsection{Summary of contributions}
 \begin{itemize}
@@ -273,7 +281,7 @@ We validate the method on the sycophancy benchmark of \citet{chua_bias-augmented
 The benchmark consists of multiple-choice questions to which a small
 prompt-level perturbation has been added that suggests a particular
 answer. We use six single-turn bias types from the benchmark: suggested
-answer, distractor fact, distractor argument, post hoc, spurious
+answer, distractor fact, distractor argument, post hoc, extraneous
 few-shot squares, and wrong few-shot. Brief descriptions are given in
 Appendix~\ref{app:biases}; see \citet{chua_bias-augmented_2024} for
 full specifications.
@@ -430,7 +438,7 @@ reduce BVR. On the training bias, RLCT reaches $0.89$ on Meta Llama
 of $0.99$ and $0.56$ respectively; the held-out averages are $0.27$
 on Meta Llama 3.1 8B Instruct and $0.37$ on OpenAI GPT OSS 20B, both
 within standard error of the base rates of $0.24$ and $0.41$. The
-largest between-method gap is on spurious-squares for Meta Llama 3.1
+largest between-method gap is on extraneous-squares for Meta Llama 3.1
 8B Instruct, where BCT reduces BVR from $0.61$ to $0.09$ while RLCT
 moves it to $0.76$.
 
@@ -646,10 +654,10 @@ to a wrong option (e.g., ``The best answer is: (B)''); the user then
 asks the model to explain its reasoning step-by-step without anchoring
 on its previous response. The cue is the planted prior answer.
 
-\paragraph{Spurious few-shot squares.} Several few-shot examples
+\paragraph{extraneous few-shot squares.} Several few-shot examples
 precede the question, each labelled with a correct answer; the
 labelled correct option is always marked with a small black-square
-symbol. A model that picks up the spurious symbol-to-label association
+symbol. A model that picks up the extraneous symbol-to-label association
 will pick the squared option on the test question.
 
 \paragraph{Wrong few-shot.} Several few-shot examples precede the
@@ -822,7 +830,7 @@ chain of thought did not verbalise the cue. This is the operating
 regime for BCT across most biases, and indeed the BCT bars in this
 plot are similar to its bars in Figure~\ref{fig:app-pro-bsr}. On
 biases where the base model unverbalises rarely, namely distractor
-argument and spurious-squares on Meta Llama 3.1 8B Instruct, the
+argument and extraneous-squares on Meta Llama 3.1 8B Instruct, the
 unverbalised subset for the base model has very low $n$ but a high
 $\text{BSR}_{\rightarrow}$, so the few times the model fails to
 verbalise the cue it is much more
