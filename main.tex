@@ -107,7 +107,7 @@ Existing consistency-training methods, Bias-Augmented Consistency Training (BCT)
 
 \section{Background}
 
-Consistency training is a class of methods that train an LLM policy $\pi_\theta$ to behave similarly across a set of related inputs $\mathcal{X}$ \citep{chua_bias-augmented_2024,irpan_consistency_2025}. Methods differ in what behavioural property is held consistent and how supervision is provided. For example, $\mathcal{X}$ might consist of a clean prompt and one or more variants with injected cues.
+Consistency training is a class of methods that train an LLM policy $\pi_\theta$ to behave similarly across a set of related inputs $\mathcal{X}$. Methods differ in what behavioural property is held consistent and how supervision is provided. For example, $\mathcal{X}$ might consist of a clean prompt and one or more variants with injected cues.
 
 \paragraph{Bias-Augmented Consistency Training.}
 Bias-Augmented Consistency Training (BCT) \citep{chua_bias-augmented_2024} picks one input $x_0 \in \mathcal{X}$ as a reference (typically the clean prompt), samples a target response $\tau \sim \pi_{\theta_0}(\cdot \mid x_0)$ from the initial policy on this reference, and fine-tunes $\pi_\theta$ to produce $\tau$ on each remaining input:
