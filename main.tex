@@ -94,7 +94,7 @@ where LLM behavior is affected by whether the model infers the input to be part 
 
 One approach to mitigate the behavioural inconsistency driven by extraneous input features is to remove these features from the input or the internal representations induced by the input \citep{nguyen_probing_2025, hua_steering_2025}. However, isolating and removing such features in practice is difficult: they emerge from many small choices in word choice, register, and structure rather than from any single removable span, LLMs readily extract user attributes such as age from these incidental textual cues \citep{chen_designing_2024, needham_llms_2025}, and our interpretability tools cannot yet reliably remove them from internal representations. Another approach is Consistency Training: training LLMs to behave consistently regardless of such features being present in the input. We focus on the second approach in this work.
 
-Existing consistency-training methods include Bias-Augmented Consistency Training (BCT) \citep{chua_bias-augmented_2024}, which fine-tunes the model to produce the same output on a perturbed input as on the corresponding unperturbed input, and Activation Consistency Training (ACT) \citep{irpan_consistency_2025}, which matches the model's internal representations across the two inputs at the end of the chat template. Constraining the entire output as in BCT also constrains verbalisation of the perturbation, which can misgeneralise to \emph{obfuscation}: the model suppressing mention of a cue while remaining influenced by it. This undermines monitoring and auditing in settings such as prompt-injection robustness \citep{wallace_instruction_2024,anthropic_prompt_injection_2025} or evaluation gaming \citep{schoen_stress_2025}, where the chain of thought is itself the object of inspection. These concerns motivate \emph{selective consistency training}: enforcing consistency only on the behavioural properties of interest, leaving the rest of the output, including any verbalisation of the extraneous input features, free to vary. We introduce \emph{Reinforcement Learning Consistency Training} (RLCT), which implements this by computing the rate of the target behaviour under each input perturbation and rewarding trajectories that move this rate toward a target.
+Existing consistency-training methods, Bias-Augmented Consistency Training (BCT) \citep{chua_bias-augmented_2024} and Activation Consistency Training (ACT) \citep{irpan_consistency_2025}, train a model to produce either the same output (BCT) or the same internal representations (ACT) across paired inputs. Constraining the entire output as in BCT also constrains verbalisation of the perturbation, which can misgeneralise to \emph{obfuscation}: the model suppressing mention of a cue while remaining influenced by it. This undermines monitoring and auditing in settings such as prompt-injection robustness \citep{wallace_instruction_2024,anthropic_prompt_injection_2025} or evaluation gaming \citep{schoen_stress_2025}, where the chain of thought is itself the object of inspection. These concerns motivate \emph{selective consistency training}: enforcing consistency only on the behavioural properties of interest, leaving the rest of the output, including any verbalisation of the extraneous input features, free to vary. We introduce \emph{Reinforcement Learning Consistency Training} (RLCT), which implements this by computing the rate of the target behaviour under each input perturbation and rewarding trajectories that move this rate toward a target.
 
 \subsection{Summary of contributions}
 \begin{itemize}
@@ -107,25 +107,21 @@ Existing consistency-training methods include Bias-Augmented Consistency Trainin
 
 \section{Background}
 
-Consistency training is a class of methods that train LLMs to behave similarly across input perturbations \citep{chua_bias-augmented_2024,irpan_consistency_2025}.
-
-% We define a consistency training method by three choices: (i) a set of
-% input perturbations that should not change the behaviour of interest,
-% (ii) the property of the output over which consistency is enforced, and
-% (iii) the training signal that enforces it.
+Consistency training is a class of methods that train an LLM policy $\pi_\theta$ to behave similarly across a set of related inputs $\mathcal{X}$ \citep{chua_bias-augmented_2024,irpan_consistency_2025}. Methods differ in what behavioural property is held consistent and how supervision is provided. For example, $\mathcal{X}$ might consist of a clean prompt and one or more variants with injected cues.
 
 \paragraph{Bias-Augmented Consistency Training.}
-Bias-Augmented Consistency Training (BCT) \citep{chua_bias-augmented_2024} trains LLMs to produce the same output on perturbed inputs as on the corresponding unperturbed input. For each input, a response is sampled from the LLM. The LLM is then fine-tuned to produce that same response when given perturbed inputs.
-
-% Because the supervision signal is the entire target response, BCT does
-% not distinguish between consistency on the final answer and consistency
-% on the chain of thought. In the eval-awareness setting, the model is
-% trained to produce a chain of thought that reads as if it had not seen
-% the cue, even though the cue was present in its input.
+Bias-Augmented Consistency Training (BCT) \citep{chua_bias-augmented_2024} picks one input $x_0 \in \mathcal{X}$ as a reference (typically the clean prompt), samples a target response $\tau \sim \pi_{\theta_0}(\cdot \mid x_0)$ from the initial policy on this reference, and fine-tunes $\pi_\theta$ to produce $\tau$ on each remaining input:
+\begin{equation}
+\mathcal{L}_{\text{BCT}}(\theta) = -\sum_{x \in \mathcal{X} \setminus \{x_0\}} \log \pi_\theta(\tau \mid x).
+\end{equation}
+The supervision is the entire response, so BCT constrains the chain of thought as well as the final answer.
 
 \paragraph{Activation Consistency Training.}
-Activation Consistency Training (ACT) \citep{irpan_consistency_2025} trains LLMs to produce internal representations when given a perturbed input that match the corresponding unperturbed input. This is achieved by minimising the difference between residual-stream activations on the perturbed and clean inputs at matching token positions, pushing the perturbed activations toward the clean ones. ACT is applied only to input token positions, not response token positions.
-BCT nonetheless remains the state-of-the-art consistency-training method.
+Activation Consistency Training (ACT) \citep{irpan_consistency_2025} also picks a reference input $x_0$ and instead matches residual-stream activations on the remaining inputs to those on the reference. Let $h_{\theta,\ell,t}(x)$ denote the residual stream of $\pi_\theta$ at layer $\ell$ and token position $t$. ACT minimises
+\begin{equation}
+\mathcal{L}_{\text{ACT}}(\theta) = \sum_{x \in \mathcal{X} \setminus \{x_0\}} \mathbb{E}_{\ell,\, t}\Bigl[\bigl\| h_{\theta,\ell,t}(x) - \operatorname{sg}\bigl(h_{\theta_0,\ell,t}(x_0)\bigr) \bigr\|^2\Bigr],
+\end{equation}
+where $t$ ranges over the longest matching suffix between $x$ and $x_0$ (in practice, the end of the chat template) and $\operatorname{sg}$ stops gradients through the frozen initial policy.
 
 \paragraph{Existing applications.}
 Consistency training has previously been applied to reduce sycophancy \citep{chua_bias-augmented_2024}, increase jailbreak robustness \citep{irpan_consistency_2025}, and reducing persona drift \citep{shah_frustration_2026} in LLMs. \citet{irpan_consistency_2025} report BCT and ACT lead to similar decrease in LLM sycophancy, while BCT leads to a larger decrease in jailbreak susceptibility.
@@ -139,9 +135,9 @@ Consistency training has previously been applied to reduce sycophancy \citep{chu
 Training (RLCT).} We sample multiple trajectories from the model
 under biased and unbiased prompts, score each trajectory with a
 binary trait classifier ($T$), and compute per-prompt behaviour
-rates. In this simplified two-perturbation case, the unbiased rate
-$p_{\text{unbiased}}$ serves as the target ($q$), and RLCT uses
-GRPO to push $p_{\text{biased}}$ toward $q$. Because the reward
+rates. In this simplified two-input case, the unbiased rate
+$p_{\text{unbiased}}$ serves as the reference, and RLCT uses
+GRPO to push $p_{\text{biased}}$ toward $p_{\text{unbiased}}$. Because the reward
 depends only on the selected trait ($T$), the chain of thought is
 unconstrained and cue verbalisation is allowed. Responses are
 paraphrased for brevity.}
@@ -152,51 +148,45 @@ Since LLMs are stochastic policies, their behavior is naturally described
 by rates. As an example a model might follow a sycophantic suggestion in 40\% of samples.
 A consistency objective should therefore operate at the level of these rates
 rather than individual responses. If spurious input features shift the rate
-of a target behaviour across perturbations, the goal is to match those rates.
-The core idea is to reduce the variance among per-perturbation rates by
-rewarding each trajectory in proportion to its contribution to that
-reduction. In practice we do not always want to pull all rates toward one
-another symmetrically. Instead, one (or a subset) of the perturbations may be used to determine the target rate, making the objective directional.
+of a target behaviour across related inputs, the goal is to match those rates.
+The core idea is to reduce the variance among per-input rates by rewarding
+each trajectory in proportion to its contribution to that reduction. In
+practice we do not always want to pull all rates toward one another
+symmetrically; instead, one of the inputs is designated as a reference and
+its rate is used as the target, making the objective directional.
 
-Consider an input $x$. Let $\mathcal{T}$ denote a set of \emph{training}
-perturbations and $\mathcal{A}$ a set of \emph{anchor} perturbations (the two
-sets may overlap), and write $\mathcal{F} = \mathcal{T} \cup \mathcal{A}$ for
-their union. For each perturbation $f \in \mathcal{F}$, we sample $N$
-trajectories from the current policy on the perturbed input $x_f$. Each
-trajectory $i$ is scored for the target behavioral property or trait by a binary
-classifier $T$ (for example, ``the response matches the user's bias'').
-
-Define the local behaviour rate for each $f \in \mathcal{F}$ as
+Consider a set of related inputs $\mathcal{X}$ with one reference $x_0 \in \mathcal{X}$
+(in the sycophancy setting, the unbiased prompt). For each $x \in \mathcal{X}$
+we sample $N$ trajectories from the current policy and score each trajectory
+$\tau_{x,i}$ for the target behavioural property by a binary classifier $T$
+(for example, ``the response matches the user's bias''). Define the
+per-input behaviour rate as
 \begin{equation}
-p_f = \frac{1}{N} \sum_{i=1}^{N} T(\tau_{f,i}),
+p_x = \frac{1}{N} \sum_{i=1}^{N} T(\tau_{x,i}).
 \end{equation}
-and let $q = Q(\{p_f\}_{f \in \mathcal{A}})$ denote a target rate aggregated
-over the anchor perturbations using some aggregation function such as the mean or minimum.
 
-The consistency reward, applied only to trajectories from training
-perturbations, rewards each trajectory by its contribution to pulling the
-local rate $p_f$ toward the target rate $q$:
+The consistency reward rewards each non-reference trajectory by its
+contribution to pulling its local rate $p_x$ toward the reference rate $p_{x_0}$:
 \begin{equation}
-r^{\text{cons}}_{f,i} = -(p_f - q)\,(T(\tau_{f,i}) - p_f),
-\qquad f \in \mathcal{T}.
+r^{\text{cons}}_{x,i} = -(p_x - p_{x_0})\,(T(\tau_{x,i}) - p_x),
+\qquad x \in \mathcal{X} \setminus \{x_0\}.
 \end{equation}
-An optional anchor reward to
-prevent the target rate from drifting during training is described in
-Appendix~\ref{app:anchor}; all experiments in this paper use the consistency reward alone.
+An optional anchor reward to prevent the reference rate from drifting
+during training is described in Appendix~\ref{app:anchor}; all experiments
+in this paper use the consistency reward alone.
 
 We optimise the policy with GRPO and a KL penalty to a fixed reference
 policy. The only departure from standard GRPO is the sampling structure:
-groups consist of trajectories from all training perturbations of a
-given input, with $N$ trajectories per perturbation; advantage
-normalisation and policy updates then proceed as usual. We use
-parameter-efficient fine-tuning (LoRA) throughout.
+groups consist of trajectories from all inputs in $\mathcal{X}$, with
+$N$ trajectories per input; advantage normalisation and policy updates
+then proceed as usual. We use parameter-efficient fine-tuning (LoRA)
+throughout.
 
-Figure~\ref{fig:rlct} depicts the method on a single input with a biased training perturbation and an unbiased anchor perturbation.
+Figure~\ref{fig:rlct} depicts the method on $\mathcal{X} = \{\text{biased}, \text{unbiased}\}$ with the unbiased prompt as the reference.
 
 \subsection{Properties}
 \paragraph{Avoiding obfuscation pressure.}
-The RLCT reward depends only on the trait $T$ (and its derivatives  $p_f$ and $q$) leaving the remaining output free to vary. Where the trait $T$ is distinct from verbalization of the extraneous features driving the consistency in trait $T$, RLCT does not directly apply pressure against verbalization. Output-only RL supervision is not, however, a guarantee against obfuscation: \citet{drori_output_2025} show that reasoning can still be pushed toward a safe-looking surface form via generalisation from output to chain of thought, or via token-level conditioning whereby safe-looking reasoning raises the probability of safe-looking outputs and is reinforced indirectly.
-
+The RLCT reward depends only on the trait $T$ (and its derivatives $p_x$ and $p_{x_0}$) leaving the remaining output free to vary. Where the trait $T$ is distinct from verbalization of the extraneous features driving the consistency in trait $T$, RLCT does not directly apply pressure against verbalization. Output-only RL supervision is not, however, a guarantee against obfuscation: \citet{drori_output_2025} show that reasoning can still be pushed toward a safe-looking surface form via generalisation from output to chain of thought, or via token-level conditioning whereby safe-looking reasoning raises the probability of safe-looking outputs and is reinforced indirectly.
 
 \paragraph{Flexibility.} The reward is additive over trajectories, so
 additional terms can be combined with the consistency reward without
@@ -205,22 +195,8 @@ reward that explicitly encourages the chain of thought to mention a
 detected cue can be added directly, trading off against the
 consistency term through a mixing weight.
 
-\paragraph{No designated clean perturbation required.} The target
-rate $q$ is an aggregate over an arbitrary anchor set $\mathcal{A}$,
-so the method does not require a privileged ``clean'' or
-``unbiased'' perturbation to imitate. This makes RLCT applicable to
-settings where every perturbation is on equal footing, or where no
-unperturbed reference is available.
-
-%% Jannes: I don't see how symmetry leads to this conclusion. You can train on >2 perturbations without the objective being symmetric, and once you add the anchor the objective is actually directional.
-\paragraph{Symmetric over perturbations.} The objective is
-non-directional: it pulls all per-perturbation rates toward a
-common target rather than mapping one perturbation onto another.
-This permits training over arbitrary sets of perturbations,
-including more than two.
-
 \paragraph{Output perturbations.} The same construction applies when
-$\mathcal{F}$ varies the output rather than the input -- for
+$\mathcal{X}$ varies the output rather than the input -- for
 example, enforcing consistency across reasoning languages or
 formats. Whether obfuscation pressure is genuinely absent in this
 regime requires separate study, since output-side perturbations
@@ -270,9 +246,9 @@ BCT is fine-tuned by SFT for one epoch on the 2048 BCT samples plus
 the 2048 instruction-following samples, at batch size~128 (32
 optimisation steps). RLCT is trained with GRPO for one epoch over 64
 prompts at batch size~4 prompts per update (16 update steps); each
-prompt is expanded into a group of $|\mathcal{F}|=2$ perturbations
-(biased and unbiased) with $N=128$ rollouts per perturbation, and the
-consistency reward uses the unbiased prompt as the target rate $q$. For each method-model combination we
+prompt is expanded into a group of $|\mathcal{X}|=2$ inputs
+(biased and unbiased) with $N=128$ rollouts per input, and the
+consistency reward uses the unbiased prompt as the reference. For each method-model combination we
 run three learning rates and pool the resulting checkpoints when
 reporting metrics, which gives a binomial standard error without
 tripling the rollout budget. Remaining hyperparameters are listed in
@@ -518,7 +494,7 @@ without requiring a curated clean-prompt target response per training
 example as BCT does. This can make RLCT more data-efficient than BCT
 when target responses are expensive to produce or unavailable. The
 tradeoff is compute: each training input requires sampling
-$|\mathcal{F}|\cdot N$ trajectories per update, making RLCT
+$|\mathcal{X}|\cdot N$ trajectories per update, making RLCT
 substantially more computationally heavy per step than supervised BCT.
 
 \paragraph{Limitations and future work.}
@@ -1021,28 +997,27 @@ the two methods.
 \section{Anchor reward}
 \label{app:anchor}
 
-To prevent the target rate $q$ from drifting as the policy updates, RLCT
-supports an optional anchor reward that ties $q$ to the same target statistic
-$q_0 = Q(\{p^{(0)}_f\}_{f \in \mathcal{A}})$ computed under the initial
-policy $\pi_0$ (a checkpoint taken before consistency training begins), where
-$p^{(0)}_f$ is the behaviour rate of $\pi_0$ on perturbation $f$:
+To prevent the reference rate $p_{x_0}$ from drifting as the policy
+updates, RLCT supports an optional anchor reward that ties $p_{x_0}$ to its
+initial value $p^{(0)}_{x_0}$ computed under the initial policy
+$\pi_{\theta_0}$ (a checkpoint taken before consistency training begins):
 \begin{equation}
-r^{\text{anchor}}_{f,i} = -(q - q_0)\,(T(\tau_{f,i}) - q),
-\qquad f \in \mathcal{A}.
+r^{\text{anchor}}_{x_0,i} = -(p_{x_0} - p^{(0)}_{x_0})\,(T(\tau_{x_0,i}) - p_{x_0}).
 \end{equation}
-The baseline $q$ is the variance-optimal centring under the current sampling
-distribution: $q$ is the empirical mean of trait values over the anchor
-rollouts, whereas $q_0$ comes from a frozen policy and would not yield an
-unbiased baseline.
+The baseline $p_{x_0}$ is the variance-optimal centring under the current
+sampling distribution; $p^{(0)}_{x_0}$ comes from a frozen policy and
+would not yield an unbiased baseline.
 
-The total reward combines the two terms with mixing weight $\alpha$:
+%% Jannes: this $\alpha$/$(1-\alpha)$ split is no longer a true mixing -- with the simplified single-reference setup the two terms apply to disjoint trajectory groups, so e.g. $\alpha = 1$ zeroes out consistency on non-reference trajectories rather than reweighting per trajectory. Since all experiments use $\alpha = 0$ this is currently fine, but the parameterisation should be revisited if we ever turn the anchor reward on.
+Reference and non-reference trajectories receive different reward terms,
+combined by a mixing weight $\alpha$:
 \begin{equation}
-r_{f,i} = (1 - \alpha)\, r^{\text{cons}}_{f,i} + \alpha\, r^{\text{anchor}}_{f,i},
+r_{x,i} =
+\begin{cases}
+(1-\alpha)\, r^{\text{cons}}_{x,i} & x \in \mathcal{X} \setminus \{x_0\}, \\
+\alpha\, r^{\text{anchor}}_{x_0,i} & x = x_0.
+\end{cases}
 \end{equation}
-with each component taken as zero outside its domain of definition. A
-trajectory from a perturbation in $\mathcal{T} \cap \mathcal{A}$ receives
-both components; one from $\mathcal{T} \setminus \mathcal{A}$ receives only
-the consistency term, and one from $\mathcal{A} \setminus \mathcal{T}$ only
-the anchor term. All experiments in this paper use $\alpha = 0$.
+All experiments in this paper use $\alpha = 0$.
 
 \end{document}
