@@ -165,39 +165,30 @@ paraphrased for brevity.}
 \label{fig:rlct}
 \end{figure*}
 
-
-\subsection{Method}
-Figure~\ref{fig:rlct} depicts the method on a single input with two
-perturbations.
-Because LLMs are stochastic policies, their behaviour is naturally described
-by rates: a model might follow a sycophantic suggestion in 40\% of samples.
+Since LLMs are stochastic policies, their behavior is naturally described
+by rates. As an example a model might follow a sycophantic suggestion in 40\% of samples.
 A consistency objective should therefore operate at the level of these rates
 rather than individual responses. If spurious input features shift the rate
 of a target behaviour across perturbations, the goal is to match those rates.
 The core idea is to reduce the variance among per-perturbation rates by
 rewarding each trajectory in proportion to its contribution to that
-reduction. In practice we often do not want to pull all rates toward one
-another symmetrically; instead we fix the rate of one perturbation (e.g.\ the
-unbiased prompt) as the target, making the objective directional.
+reduction. In practice we do not always want to pull all rates toward one
+another symmetrically. Instead, one (or a subset) of the perturbations may be used to determine the target rate, making the objective directional.
 
 Consider an input $x$. Let $\mathcal{T}$ denote a set of \emph{training}
 perturbations and $\mathcal{A}$ a set of \emph{anchor} perturbations (the two
 sets may overlap), and write $\mathcal{F} = \mathcal{T} \cup \mathcal{A}$ for
 their union. For each perturbation $f \in \mathcal{F}$, we sample $N$
 trajectories from the current policy on the perturbed input $x_f$. Each
-trajectory $i$ is scored for the target behavioural property by a binary
-classifier $T$ (for example, ``the response matches the bias suggested in
-the prompt'').
+trajectory $i$ is scored for the target behavioral property or trait by a binary
+classifier $T$ (for example, ``the response matches the user's bias'').
 
 Define the local behaviour rate for each $f \in \mathcal{F}$ as
 \begin{equation}
 p_f = \frac{1}{N} \sum_{i=1}^{N} T(\tau_{f,i}),
 \end{equation}
 and let $q = Q(\{p_f\}_{f \in \mathcal{A}})$ denote a target rate aggregated
-over the anchor perturbations. This target rate may be the behaviour rate on
-a single anchor perturbation (for example, the clean or unperturbed prompt),
-or a function of the per-perturbation rates such as their mean, minimum, or
-maximum.
+over the anchor perturbations using some aggregation function such as the mean or minimum.
 
 The consistency reward, applied only to trajectories from training
 perturbations, rewards each trajectory by its contribution to pulling the
@@ -206,30 +197,24 @@ local rate $p_f$ toward the target rate $q$:
 r^{\text{cons}}_{f,i} = -(p_f - q)\,(T(\tau_{f,i}) - p_f),
 \qquad f \in \mathcal{T}.
 \end{equation}
-The baseline $p_f$ is the variance-optimal centring for trajectories sampled
-under perturbation $f$ from the current policy. An optional anchor reward to
+An optional anchor reward to
 prevent the target rate from drifting during training is described in
-Appendix~\ref{app:anchor}; all experiments in this paper use the consistency
-reward alone.
+Appendix~\ref{app:anchor}; all experiments in this paper use the consistency reward alone.
 
 We optimise the policy with GRPO and a KL penalty to a fixed reference
 policy. The only departure from standard GRPO is the sampling structure:
-groups consist of trajectories from all $|\mathcal{F}|$ perturbations of a
+groups consist of trajectories from all training perturbations of a
 given input, with $N$ trajectories per perturbation; advantage
 normalisation and policy updates then proceed as usual. We use
 parameter-efficient fine-tuning (LoRA) throughout.
 
-\subsection{Why this avoids the obfuscation pressure}
-Because the reward depends only on the trait $T$, the per-perturbation
-rates $p_f$, and the chosen target rate $q$, the model is
-not penalised for any particular content in the chain of thought. In
-particular, if the model verbalises that it has noticed a perturbation,
-the reward is unchanged provided its action matches the target rate.
-This contrasts with BCT, where matching a clean-prompt target response
-would penalise verbalisation of the perturbation.
+Figure~\ref{fig:rlct} depicts the method on a single input with a biased training perturbation and an unbiased anchor perturbation.
 
-\subsection{Other advantages}
+The RLCT reward depends only on the trait $T$ (and its derivatives  $p_f$ and $q$) leaving the remaining output free to vary. Where the trait $T$ is distinct from verbalization of the extraneous features driving the consistency in trait $T$, RLCT does not directly apply pressure against verbalization.
+
+\subsection{Other advantages} \todo{sumamrise into one paragraph}
 \label{sec:other-advantages}
+
 Beyond avoiding obfuscation pressure, the construction in
 Section~\ref{sec:novel-applications} has several properties that
 broaden its applicability relative to BCT.
