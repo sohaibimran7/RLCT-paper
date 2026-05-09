@@ -165,9 +165,8 @@ The core idea is to match the rate of the target behaviour across
 perturbations, i.e.\ to reduce the variance among per-perturbation rates,
 by rewarding each trajectory in proportion to its contribution to that
 reduction. In practice we often do not want to pull all rates toward one
-another symmetrically; instead we designate one perturbation (e.g.\ the
-unbiased prompt) as an anchor and fix its rate as the target, making the
-objective directional.
+another symmetrically; instead we fix the rate of one perturbation (e.g.\ the
+unbiased prompt) as the target, making the objective directional.
 
 Consider an input $x$. Let $\mathcal{T}$ denote a set of \emph{training}
 perturbations and $\mathcal{A}$ a set of \emph{anchor} perturbations (the two
