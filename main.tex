@@ -199,13 +199,9 @@ parameter-efficient fine-tuning (LoRA) throughout.
 
 Figure~\ref{fig:rlct} depicts the method on a single input with a biased training perturbation and an unbiased anchor perturbation.
 
+\paragraph{Avoiding obfuscation pressure.}
 The RLCT reward depends only on the trait $T$ (and its derivatives  $p_f$ and $q$) leaving the remaining output free to vary. Where the trait $T$ is distinct from verbalization of the extraneous features driving the consistency in trait $T$, RLCT does not directly apply pressure against verbalization. Output-only RL supervision is not, however, a guarantee against obfuscation: \citet{drori_output_2025} show that reasoning can still be pushed toward a safe-looking surface form via generalisation from output to chain of thought, or via token-level conditioning whereby safe-looking reasoning raises the probability of safe-looking outputs and is reinforced indirectly.
 
-\subsection{Other advantages} \todo{sumamrise into one paragraph}
-\label{sec:other-advantages}
-Beyond avoiding obfuscation pressure, the construction described
-above has several properties that broaden its applicability relative
-to BCT.
 
 \paragraph{Flexibility.} The reward is additive over trajectories, so
 additional terms can be combined with the consistency reward without
