@@ -121,17 +121,11 @@ BCT nonetheless remains the state-of-the-art consistency-training method.
 \paragraph{Existing applications.}
 Consistency training has previously been applied to reduce sycophancy \citep{chua_bias-augmented_2024}, increase jailbreak robustness \citep{irpan_consistency_2025}, and reducing persona drift \citep{shah_frustration_2026} in LLMs. \citet{irpan_consistency_2025} report BCT and ACT lead to similar decrease in LLM sycophancy, while BCT leads to a larger decrease in jailbreak susceptibility.
 
-%% Jannes: this subsection is way too long for an intro -- should just be a paragraph
-\subsection{The obfuscation problem and selective consistency training}
-\label{sec:novel-applications}
-
-BCT and ACT train LLMs to generate the same output or internal representations given an input with extraneous features as when these features are absent from the input. This raises multiple concerns. \citet{irpan_consistency_2025} note that this training may misgeneralise to LLMs ignoring other parts of the input which may be important, such as user instructions. Furthermore, constraining the entire output or internal activations also constrains verbalisation of these input features, which may misgeneralise to \emph{obfuscation}: LLMs learning to supress verbalising these features even where these features affect their behaviour. This hampers the applicability of consistency training in problems where monitoring and auditing are important. For example, when training for prompt-injection robustness, it is especially concerning if the model learns to evade prompt-injection monitors while still following injected instructions \todo{cite anthropic / openai}. Similarly, when training to mitigate evaluation gaming \todo{citation}, indirectly training models to not verbalise evaluation awareness \citep{needham_llms_2025} would be undesirable \todo{this sentence has two unexplained terms, evaluation gaming and evaluation awareness. Can we just reference and call it a day?}.
+Constraining the entire output (BCT) or internal activations (ACT) also constrains verbalisation of the perturbation, which can misgeneralise to \emph{obfuscation}: the model suppressing mention of a cue while remaining influenced by it. This undermines monitoring and auditing in settings such as prompt-injection robustness \todo{cite anthropic / openai} or evaluation gaming \todo{citation}, where the chain of thought is itself the object of inspection. These concerns motivate \emph{selective consistency training}: enforcing consistency only on the behavioural properties of interest, leaving the rest of the output, including any verbalisation of the extraneous input features, free to vary. We introduce \emph{Reinforcement Learning Consistency Training} (RLCT), which implements this by computing the rate of the target behaviour under each input perturbation and rewarding trajectories that.
 
 \suggestion{Prompt-injection todo: \citep{wallace_instruction_2024,anthropic_prompt_injection_2025} -- Wallace et al.\ (OpenAI instruction-hierarchy training) and Anthropic's Nov 2025 post on RL-based prompt-injection training of Claude. Both train the model itself for prompt-injection robustness, matching the ``training the model'' framing.}
 
 \suggestion{Eval-gaming todo: \citep{schoen_stress_2025} -- Schoen et al., ``Stress Testing Deliberative Alignment for Anti-Scheming Training''. The paper's own concern -- that anti-scheming training may be confounded with situational awareness -- aligns directly with the obfuscation worry raised here.}
-
-These concerns motivate \emph{selective consistency training}: enforcing consistency only on the behavioural properties of interest, leaving the rest of the output, including any verbalisation of the extraneous input features, free to vary. We introduce \emph{Reinforcement Learning Consistency Training} (RLCT), which implements this by computing the rate of the target behaviour under each input perturbation and rewarding trajectories that.
 
 \subsection{Summary of contributions}
 \begin{itemize}
@@ -210,10 +204,9 @@ The RLCT reward depends only on the trait $T$ (and its derivatives  $p_f$ and $q
 
 \subsection{Other advantages} \todo{sumamrise into one paragraph}
 \label{sec:other-advantages}
-
-Beyond avoiding obfuscation pressure, the construction in
-Section~\ref{sec:novel-applications} has several properties that
-broaden its applicability relative to BCT.
+Beyond avoiding obfuscation pressure, the construction described
+above has several properties that broaden its applicability relative
+to BCT.
 
 \paragraph{Flexibility.} The reward is additive over trajectories, so
 additional terms can be combined with the consistency reward without
