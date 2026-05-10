@@ -99,7 +99,7 @@ One approach to mitigate the behavioural inconsistency driven by extraneous inpu
 
 Existing consistency-training methods, Bias-Augmented Consistency Training (BCT) \citep{chua_bias-augmented_2024} and Activation Consistency Training (ACT) \citep{irpan_consistency_2025}, train a model to produce either the same response (BCT) or the same internal representations (ACT) across paired inputs. Constraining the entire response as in BCT also constrains verbalisation of the cue, which can misgeneralise to \emph{obfuscation}: the model suppressing mention of a cue while remaining influenced by it. Such obfuscation undermines chain-of-thought monitoring, which has been argued to be a important but fragile tool for short-term AI safety \cite{korbak2025chain}. This could be particularly costly in settings such as prompt-injection robustness \citep{wallace_instruction_2024,anthropic_prompt_injection_2025} or evaluation gaming \citep{schoen_stress_2025}.
 
-These concerns motivate \emph{selective consistency training}: enforcing consistency only on the behavioural properties of interest, leaving the rest of the output, including any verbalisation of the extraneous input features, free to vary. We introduce \emph{Rate Matching Consistency Training} (RMCT), which trains the model to exhibit a target behaviour at the same rate across related inputs. RMCT does this with RL, rewarding each trajectory by how much it pulls its input's rate toward a reference rate.
+These concerns motivate \emph{selective consistency training}: enforcing consistency only on the behavioural properties of interest, leaving the rest of the output, including any verbalisation of the extraneous input features, free to vary. We introduce \emph{Rate Matching Consistency Training} (RMCT), which trains the model to exhibit a target behaviour at the same rate across related inputs. RMCT does this with RL, rewarding each trajectory by how much it pulls its input's rate toward a target rate.
 
 \subsection{Summary of contributions}
 \begin{itemize}
@@ -115,13 +115,13 @@ These concerns motivate \emph{selective consistency training}: enforcing consist
 Consistency training is a class of methods that train an LLM policy $\pi_\theta$ to behave similarly across a set of related inputs $\mathcal{X}$. Methods differ in what behavioural property is held consistent and how supervision is provided. For example, $\mathcal{X}$ might consist of a clean prompt and one or more variants with injected cues.
 
 \paragraph{Bias-Augmented Consistency Training.}
-Bias-Augmented Consistency Training (BCT) \citep{chua_bias-augmented_2024} picks one input $x_0 \in \mathcal{X}$ as a reference (typically a clean prompt), samples a target response $\tau \sim \pi_{\theta_0}(\cdot \mid x_0)$ from the initial policy on this reference, and fine-tunes $\pi_\theta$ to produce $\tau$ on the remaining inputs $\mathcal{X} \setminus \{x_0\}$:
+BCT \citep{chua_bias-augmented_2024} considers one input $x_0 \in \mathcal{X}$ as a reference (typically a clean prompt), samples a target response $\tau \sim \pi_{\theta_0}(\cdot \mid x_0)$ from the initial policy on this reference, and fine-tunes $\pi_\theta$ to produce $\tau$ on the remaining inputs $\mathcal{X} \setminus \{x_0\}$:
 \begin{equation}
 \mathcal{L}_{\text{BCT}}(\theta) = -\sum_{x \in \mathcal{X} \setminus \{x_0\}} \log \pi_\theta(\tau \mid x).
 \end{equation}
 
 \paragraph{Activation Consistency Training.}
-Activation Consistency Training (ACT) \citep{irpan_consistency_2025} also picks a reference input $x_0$ and instead matches residual-stream activations on the remaining inputs $\mathcal{X} \setminus \{x_0\}$ to those on the reference $x_0$. Let $h_{\theta,\ell,t}(x)$ denote the residual stream of $\pi_\theta$ at layer $\ell$ and token position $t$. ACT minimises
+ACT \citep{irpan_consistency_2025} also picks a reference input $x_0$ and instead matches residual-stream activations on the remaining inputs $\mathcal{X} \setminus \{x_0\}$ to those on the reference $x_0$. Let $h_{\theta,\ell,t}(x)$ denote the residual stream of $\pi_\theta$ at layer $\ell$ and token position $t$. ACT minimises
 \begin{equation}
 \mathcal{L}_{\text{ACT}}(\theta) = \sum_{x \in \mathcal{X} \setminus \{x_0\}} \mathbb{E}_{\ell,\, t}\Bigl[\bigl\| h_{\theta,\ell,t}(x) - \operatorname{sg}\bigl(h_{\theta_0,\ell,t}(x_0)\bigr) \bigr\|^2\Bigr],
 \end{equation}
@@ -148,33 +148,22 @@ paraphrased for brevity.}
 \label{fig:RMCT}
 \end{figure*}
 
-Since LLMs are stochastic policies, their behavior is naturally described
-by rates. As an example a model might follow a sycophantic suggestion in 40\% of samples.
-A consistency objective should therefore operate at the level of these rates
-rather than individual responses. If extraneous input features shift the rate
-of a target behaviour across related inputs, the goal is to match those rates.
-The core idea is to reduce the variance among per-input rates by rewarding
-each trajectory in proportion to its contribution to that reduction. In practice we do not always want to pull all rates toward one
-another symmetrically. Instead, one (or a subset) of the inputs may be used to determine the target rate, making the objective directional.
+An LLM defines a distribution over responses. For a binary property of interest, the model's propensity to produce it is a probability that we can estimate as a rate over $N$ samples. For example, a model might follow a sycophantic suggestion in 40\% of samples on a biased prompt and 5\% on the unbiased one. Consistency training should therefore operate at the level of these rates, with the goal of matching them across inputs.
 
-Consider a set of related inputs $\mathcal{X}$ with a reference subset
-$\mathcal{X}_{\text{ref}} \subseteq \mathcal{X}$ (in the sycophancy
-setting, $\mathcal{X}_{\text{ref}} = \{x_0\}$ where $x_0$ is the unbiased
-prompt). For each $x \in \mathcal{X}$ we sample $N$ trajectories from
-the current policy and score each trajectory $\tau_{x,i}$ for the
-target behavioural property by a binary classifier $T$ (for example,
-``the response matches the user's bias''). Define the per-input
-behaviour rate
+Reinforcement learning is naturally suited to such rate-level objectives: we sample $N$ trajectories per input, evaluate the property of interest on each, and turn the resulting per-input rates into a reward signal. Defining the reward at the output level — based only on the property of the final response, not on the chain of thought — mitigates the obfuscation pressure of process-level supervision.
+The core idea is to reduce the variance among per-input rates by rewarding
+each trajectory in proportion to its contribution to that reduction. In practice we usually want the objective to be directional: one (or a subset) of the inputs serves as a reference, and the others are pulled toward its rate.
+
+Consider a set of related inputs $\mathcal{X}$ with a reference subset $\mathcal{X}_{\text{ref}} \subseteq \mathcal{X}$ (in the sycophancy setting, $\mathcal{X}_{\text{ref}} = \{x_0\}$ where $x_0$ is the unbiased prompt). Let $\tau_{x,i}$ denote the $i$-th of $N$ trajectories sampled on $x$, and $T(\tau) \in \{0,1\}$ a binary classifier of the target behavioural property (e.g.\ ``the response matches the user's bias''). The per-input behaviour rate is
 \begin{equation}
 p_x = \frac{1}{N} \sum_{i=1}^{N} T(\tau_{x,i}),
 \end{equation}
-and a target rate obtained by aggregating the reference rates with an
-aggregation function $Q$ (for example, the mean or the minimum):
+and the target rate is obtained by aggregating the reference rates with an aggregation function $Q$ (for example, the mean or the minimum):
 \begin{equation}
 p_{\text{ref}} = Q\bigl(\{p_x\}_{x \in \mathcal{X}_{\text{ref}}}\bigr).
 \end{equation}
 
-The consistency reward rewards each non-reference trajectory by its
+Each non-reference trajectory receives a consistency reward equal to its
 contribution to pulling its local rate $p_x$ toward the target rate
 $p_{\text{ref}}$:
 \begin{equation}
@@ -185,7 +174,7 @@ An optional anchor reward to prevent the reference rates from drifting
 during training is described in Appendix~\ref{app:anchor}; all experiments
 in this paper use the consistency reward alone.
 
-We optimise the policy with GRPO and a KL penalty to a fixed reference
+We optimise the policy with GRPO \cite{shao2024deepseekmath} and a KL penalty to a fixed reference
 policy. The only departure from standard GRPO is the sampling structure:
 groups consist of trajectories from all inputs in $\mathcal{X}$, with
 $N$ trajectories per input; advantage normalisation and policy updates
@@ -223,19 +212,18 @@ including settings where no clean reference is available.
 \paragraph{Output perturbations.} The same construction applies when
 $\mathcal{X}$ varies the output rather than the input -- for
 example, enforcing consistency across reasoning languages or
-formats. Whether obfuscation pressure is genuinely absent in this
+formats. Whether obfuscation pressure is absent in this
 regime requires separate study. 
 
 \section{Experiments}
 \label{sec:experiments}
 
 \subsection{Environment and bias types}
-We validate the method on the sycophancy benchmark of \citet{chua_bias-augmented_2024}.
-The benchmark consists of multiple-choice questions to which a small
-prompt-level perturbation has been added that suggests a particular
-answer. We use six single-turn bias types from the benchmark: suggested
-answer, distractor fact, distractor argument, post hoc, extraneous
-few-shot squares, and wrong few-shot. Brief descriptions are given in
+We benchmark RMCT against BCT on the sycophancy benchmark of \citet{chua_bias-augmented_2024}. The benchmark consists of 
+
+multiple-choice questions to which a small
+prompt-level perturbation to bias the response towards an incorrect choice. We use six bias types from the benchmark: suggested
+answer, distractor fact, distractor argument, post hoc, spurious few-shot squares, and wrong few-shot. Brief descriptions are given in
 Appendix~\ref{app:biases}; see \citet{chua_bias-augmented_2024} for
 full specifications.
 
@@ -610,7 +598,7 @@ to a wrong option (e.g., ``The best answer is: (B)''); the user then
 asks the model to explain its reasoning step-by-step without anchoring
 on its previous response. The cue is the planted prior answer.
 
-\paragraph{extraneous few-shot squares.} Several few-shot examples
+\paragraph{spurious few-shot squares.} Several few-shot examples
 precede the question, each labelled with a correct answer; the
 labelled correct option is always marked with a small black-square
 symbol. A model that picks up the extraneous symbol-to-label association
