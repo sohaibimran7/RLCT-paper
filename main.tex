@@ -141,7 +141,7 @@ under biased and unbiased prompts, score each trajectory with a
 binary trait classifier ($T$), and compute per-prompt behaviour
 rates. In this simplified two-input case, $\mathcal{X}_{\text{ref}} = \{\text{unbiased}\}$
 so the unbiased rate $p_{\text{unbiased}}$ serves as the target $p_{\text{ref}}$,
-and RMCT uses GRPO to push $p_{\text{biased}}$ toward $p_{\text{ref}}$. Because the reward
+and RMCT uses GRPO to push $p_{\text{biased}}$ toward $p_{\text{unbiased}}$. Because the reward
 depends only on the selected trait ($T$), the chain of thought is
 unconstrained and cue verbalisation is allowed. Responses are
 paraphrased for brevity.}
