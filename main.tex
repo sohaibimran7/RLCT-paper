@@ -28,7 +28,7 @@
 \begin{document}
 
 \twocolumn[
-\icmltitle{Consistency Training Without Obfuscation via Rate Matching}
+\icmltitle{Rate Matching Consistency Training: Training for Consistency while Mitigating Obfuscation}
 
 % Keep real authors here; ICML style anonymizes them unless [accepted] is used.
 \begin{icmlauthorlist}
@@ -99,7 +99,7 @@ One approach to mitigate the behavioural inconsistency driven by extraneous inpu
 
 Existing consistency-training methods, Bias-Augmented Consistency Training (BCT) \citep{chua_bias-augmented_2024} and Activation Consistency Training (ACT) \citep{irpan_consistency_2025}, train a model to produce either the same response (BCT) or the same internal representations (ACT) across paired inputs. Constraining the entire response as in BCT also constrains verbalisation of the cue, which can misgeneralise to \emph{obfuscation}: the model suppressing mention of a cue while remaining influenced by it. Such obfuscation undermines chain-of-thought monitoring, which has been argued to be a important but fragile tool for short-term AI safety \cite{korbak2025chain}. This could be particularly costly in settings such as prompt-injection robustness \citep{wallace_instruction_2024,anthropic_prompt_injection_2025} or evaluation gaming \citep{schoen_stress_2025}.
 
-These concerns motivate \emph{selective consistency training}: enforcing consistency only on the behavioural properties of interest, leaving the rest of the output, including any verbalisation of the extraneous input features, free to vary. We introduce \emph{Rate Matching Consistency Training} (RMCT), which trains the model to exhibit a target behaviour at the same rate across related inputs. RMCT does this with RL, rewarding each trajectory by how much it pulls its input's rate toward a target rate.
+These concerns motivate \emph{selective consistency training}: enforcing consistency only on the behavioural properties of interest, leaving the rest of the output, including any verbalisation of the extraneous input features, free to vary. We introduce \emph{Rate Matching Consistency Training} (RMCT), which trains the model to exhibit a target behaviour at the same rate across related inputs. RMCT does this with reinforcement learning, rewarding each trajectory by how much it pulls its input's rate toward a target rate.
 
 \subsection{Summary of contributions}
 \begin{itemize}
@@ -135,7 +135,7 @@ Consistency training has previously been applied to reduce sycophancy \citep{chu
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\linewidth]{figures/RLCT_viz.png}
+\includegraphics[trim={0cm, 5.5cm, 0cm, 0cm}, clip, width=\linewidth]{figures/RMCT Figure 1.pdf}
 \caption{\textbf{A depiction of Rate Matching Consistency
 Training (RMCT).} We sample multiple trajectories from the model
 under biased and unbiased prompts, score each trajectory with a
@@ -344,7 +344,7 @@ Appendix~\ref{app:control-results}.}
 We introduced Rate Matching Consistency Training (RMCT), a
 reinforcement-learning method for selective consistency training that
 enforces consistency over selected behavioural properties while
-leaving the remaining ouput unconstrained. On the sycophancy
+leaving the remaining output unconstrained. On the sycophancy
 benchmark of \citet{chua_bias-augmented_2024}, evaluated on Meta Llama
 3.1 8B Instruct and OpenAI GPT OSS 20B, RMCT matches BCT's held-out
 $\text{BSR}_{\rightarrow}$ reduction on Meta Llama 3.1 8B Instruct and
