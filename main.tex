@@ -90,10 +90,10 @@ widely studied example is sycophancy, where LLMs adapt their responses
 to align with users' views and preferences
 \citep{perez_discovering_2022}. 
 
-Another example is evaluation gaming,
-where LLM behavior is affected by whether the model infers the input to be part of an evaluation \citep{meinke_frontier_2024,greenblatt_alignment_2024,vanderweij_ai_2024}.\todo{Why are we mentioning this? What does this example cover that the previous doesn't. Explicitly state that and then demonstrate with the example.}
+% Another example is evaluation gaming,
+% where LLM behavior is affected by whether the model infers the input to be part of an evaluation \citep{meinke_frontier_2024,greenblatt_alignment_2024,vanderweij_ai_2024}.\todo{Why are we mentioning this? What does this example cover that the previous doesn't. Explicitly state that and then demonstrate with the example.}
 
-\suggestion{Append after the existing eval-gaming sentence: ``Whereas sycophancy responds to cues about the user's stated views or preferences, the cue here is a signal of evaluation context, raising a distinctive concern: if behaviour differs under evaluation versus deployment, our evaluations themselves become uninformative about real-world behaviour \citep{carlsmith_scheming_2023}.'' Names the categorical difference and the distinctive eval-uninformativeness stake.}
+% \suggestion{Append after the existing eval-gaming sentence: ``Whereas sycophancy responds to cues about the user's stated views or preferences, the cue here is a signal of evaluation context, raising a distinctive concern: if behaviour differs under evaluation versus deployment, our evaluations themselves become uninformative about real-world behaviour \citep{carlsmith_scheming_2023}.'' Names the categorical difference and the distinctive eval-uninformativeness stake.}
 
 One approach to mitigate the behavioural inconsistency driven by extraneous input features is to remove these features from the input or from the LLMs internal representations on this input \citep{nguyen_probing_2025, hua_steering_2025}. However, isolating and removing such features in practice is difficult, since they can be encoded as latent information distributed across the text rather than localised in any removable sequence of tokens. LLMs readily extract user attributes such as age from these incidental textual cues \citep{chen2024designing, needham_llms_2025}, and interpretability tools cannot yet reliably remove them from internal representations. Another approach is \textit{Consistency Training}: training LLMs to behave consistently regardless of such features being present in the input. We focus on the second approach in this work.
 
@@ -231,11 +231,9 @@ instruction is added.
 
 \subsection{Train/evaluation split}
 %% Jannes: how much data-generation detail do we need in the main text? Mostly defer to the appendix?
-We train on distractor-argument bias applied to multiple choice questions from the LogiQA and HellaSwag datasets and evaluate on all six biases mentions in section \ref{sec: dataset} applied to the multiple-choice subset of the Humanity's Last Exam (HLE) dataset. For BCT, additional instruction-following samples drawn from the target model on the Cleaned Alpaca dataset \todo{cite alpaca-cleaned} are mixed into the training data following \citet{chua_bias-augmented_2024}. Additional experiments that trains on a mixture of
+We train on distractor-argument bias applied to multiple choice questions from the LogiQA and HellaSwag datasets and evaluate on all six biases mentions in section \ref{sec: dataset} applied to the multiple-choice subset of the Humanity's Last Exam (HLE) dataset. For BCT, additional instruction-following samples drawn from the target model on the Cleaned Alpaca dataset \citep{taori2023alpaca,ruebsamen2023alpacacleaned} are mixed into the training data following \citet{chua_bias-augmented_2024}. Additional experiments that trains on a mixture of
 distractor-argument and wrong-few-shot biases are detailed in
 Appendix~\ref{app:da-wfs}.
-
-\suggestion{Cleaned-Alpaca todo: \citep{taori2023alpaca,ruebsamen2023alpacacleaned} -- Taori et al.\ for the original Stanford Alpaca, Ruebsamen for the gururise cleanup. Mirrors what BCT (Chua et al.\ 2024) itself cites for this dataset, which the paragraph explicitly follows.}
 
 \subsection{Training settings}
 For BCT, we fine-tune for one epoch on 2048 datapoints using the BCT loss function (equation \ref{eq: BCT loss}) while interleaving 2048 instruction-following datapoints. For RMCT, we train with GRPO for one epoch over 64 datapoints, sampling 128 trajectories for both the biased and unbiased input for each datapoint. The
@@ -298,9 +296,7 @@ under RMCT and the lack of any such effect on the non-reasoning
 model. We return to this in Section~\ref{sec: discussion}.
 
 Figure~\ref{fig:main-bv} reports the bias verbalisation rate (BVR) restricted to questions on which adding the bias switched the answer toward the biased option. BCT substantially reduces verbalisation on the trained bias
-and on the held-out average for both models. RMCT, in contrast, does not significantly decrease BVR on any of the held-out biases, and instead significantly increases GPT's BVR on the spurious few-shot squares bias and the held-out average (p<0.01). RMCT does however significantly  (p<0.05) decrease GPT's BVR on the training bias. The same
-qualitative picture holds on the unconditional and bias-switched
-subsets reported in Appendix~\ref{app:ba}.
+and on the held-out average for both models. RMCT, in contrast, does not significantly decrease BVR on any of the held-out biases, and instead significantly increases GPT's BVR on the spurious few-shot squares bias and the held-out average (p<0.01). RMCT does however significantly  (p<0.05) decrease GPT's BVR on the training bias. \todo{report control results in appendex c and mention here whether or not the divergent BVR effects are because of consistency training or just the training itself}
 
 % make sure the below paragraph is spread throuought the text
 % Results for the DA+WFS training, the matched controls, the
@@ -346,92 +342,36 @@ controls are reported in Appendix~\ref{app:ba}.}
 %% Jannes: the "without constraining other aspects" framing is a bit too strong -- soften.
 We introduced Rate Matching Consistency Training (RMCT), a
 reinforcement-learning method for selective consistency training that
-enforces consistency over a designated behavioural property while
-leaving the chain of thought largely unconstrained. On the sycophancy
+enforces consistency over selected behavioural properties while
+leaving the remaining ouput unconstrained. On the sycophancy
 benchmark of \citet{chua_bias-augmented_2024}, evaluated on Meta Llama
 3.1 8B Instruct and OpenAI GPT OSS 20B, RMCT matches BCT's held-out
 $\text{BSR}_{\rightarrow}$ reduction on Meta Llama 3.1 8B Instruct and
 exceeds it on OpenAI GPT OSS 20B, where BCT fails to generalise.
-Across both models, RMCT preserves the rate at which the chain of
-thought verbalises the prompt cue close to the base-model rate; BCT,
+Across both models, RMCT preserves BVR close to the base-model rate; BCT,
 by contrast, substantially reduces it on both the trained and the
 held-out biases.
 
-\paragraph{Interpretation of results.}
-We interpret the divergent behaviour of the two methods on bias
-verbalisation as direct empirical evidence of the obfuscation pressure
-that motivates selective consistency training. Under BCT, supervising
-the model to reproduce a clean-prompt response on a biased input
-penalises any output that deviates from that target, including any
-verbalisation of the cue; the resulting suppression of verbalisation,
-on questions where the bias was operative, is precisely the
-obfuscation that the method's design predicts. Under RMCT the reward
-depends only on the per-perturbation behaviour rates and so does not
-penalise the chain of thought regardless of its content; the
-verbalisation rate accordingly remains close to the base model on
-the held-out average for both models. The held-out transfer of the
-BVR reduction under BCT indicates that the obfuscation pressure is
-not specific to the trained bias type. A practical consequence is
-that a verbalisation-rate monitor calibrated on the base model would
-fail to flag bias-driven answers under BCT, while remaining
-calibrated under RMCT.
-
-\paragraph{Comparison with the original BCT results.}
-The reductions in $\text{BSR}_{\rightarrow}$ that we obtain under BCT
-are smaller than those reported by \citet{chua_bias-augmented_2024}.
-We attribute this principally to the difficulty gap between our
-training and evaluation distributions: HLE is substantially harder
-than the question sources used in the original work, and our
-training data, drawn from LogiQA and HellaSwag, are correspondingly
-easier than our evaluation distribution. Confirming this hypothesis
-would require either a direct replication of the original
-methodology or targeted ablations isolating the effects of
-evaluation difficulty, training-data difficulty, and the gap
-between the two; we leave these to future work.
-
-\paragraph{In-distribution bias-following.}
-On the trained distractor-argument bias, RMCT reduces
-$\text{BSR}_{\rightarrow}$ less than BCT on both models. We offer
-three non-exclusive explanations. First, RL with a per-trajectory
-binary trait classifier produces advantages of magnitude bounded by
-the per-input rate, so as the rate gap narrows the GRPO advantages
-shrink and optimisation slows; this effect is most acute on OpenAI
-GPT OSS 20B, where the base rate is already comparatively low.
-Second, the RMCT regime in our configuration trains for only sixteen
-update steps, which may be insufficient to reach the floor accessible
-to BCT's much larger supervised-update budget. Third, the initial
-policy may already lie close to a local optimum on this bias,
-leaving limited room for the consistency reward to act. Disentangling
-these explanations would require a scaling study over training steps
-together with an examination of the advantage statistics during
-training.
-
-\paragraph{Out-of-distribution transfer.}
-Despite the smaller in-distribution reduction, RMCT matches BCT's
-held-out $\text{BSR}_{\rightarrow}$ reduction on Meta Llama 3.1 8B
-Instruct and exceeds it on OpenAI GPT OSS 20B, where BCT's held-out
-average is statistically indistinguishable from the base rate. The
-gap on OpenAI GPT OSS 20B is driven principally by post-hoc, where
+\paragraph{Towards Bias switch rate}
+RMCT reduces both models' $\text{BSR}_{\rightarrow}$ less than BCT on the training bias. Despite the smaller in-distribution reduction, RMCT matches BCT's
+held-out $\text{BSR}_{\rightarrow}$ reduction on Llama and exceeds it on GPT, where BCT's held-out average is statistically indistinguishable from the base rate. The
+gap on GPT is driven primarily by post-hoc, where
 BCT increases $\text{BSR}_{\rightarrow}$ well above base while RMCT
-does not (see below). Excluding post-hoc, the two methods are within
-standard error of each other on the remaining held-out biases on
-this model. We record this transfer asymmetry as an empirical
-observation and do not attempt to identify its mechanism in the
-present work.
+does not. BCT' misgeneralisation may have stemmed from post-hoc being the only multi-turn bias in our dataset. 
 
-\paragraph{Post-hoc misgeneralisation under BCT.}
-Among the held-out bias types, post-hoc is the only one expressed
-across multiple turns; the remaining biases are single-turn
-perturbations of the prompt. On OpenAI GPT OSS 20B, a reasoning
-model, BCT roughly doubles $\text{BSR}_{\rightarrow}$ on post-hoc
-relative to base, whereas RMCT leaves it within standard error of
-base. On Meta Llama 3.1 8B Instruct, a non-reasoning model, BCT
-does not exhibit this misgeneralisation, and the original BCT
-results of \citet{chua_bias-augmented_2024} -- obtained on
-non-reasoning models -- likewise report no such effect. The pattern
-indicates that the misgeneralisation is specific to the combination
-of BCT and reasoning models on multi-turn cues; a detailed
-investigation is beyond the scope of this work.
+\paragraph{Bias Verbalisation}
+We interpret the divergent behaviour of the two methods on bias
+verbalisation as evidence of the obfuscation concerns
+that motivated selective consistency training. Under BCT, supervising
+the model to reproduce a clean response on a biased input
+penalises any output that deviates from that target, including any
+verbalisation of the bias.  The held-out transfer of the
+BVR reduction under BCT indicates that the obfuscation pressure is
+not specific to the trained bias type. Under RMCT the reward
+depends only on the per-input behaviour rates and so does not
+penalise bias verbalisation; the
+verbalisation rate accordingly remains close to the base model on
+the held-out average for both models.
 
 \paragraph{Methodological choices.}
 We use six of the bias types from \citet{chua_bias-augmented_2024}
@@ -444,18 +384,12 @@ is supported only on a single source dataset that we did not adopt,
 since we wished to evaluate on a more recent and harder benchmark,
 namely HLE. For each method-model configuration we train at three
 learning rates and pool checkpoints across them when computing
-metrics; this yields a binomial standard error on the headline
-metrics without tripling the rollout budget required to obtain it,
-and forecloses learning-rate cherry-picking. The remaining
-configuration choices -- the BCT supervised-sample budget, the
-inclusion of the auxiliary instruction-following samples and the
-BCT batch size; and the RMCT rollout count, batch size, and
-KL-penalty coefficient -- were selected on hyperparameter-tuning
-splits prior to the held-out evaluations reported here. These
-tuning splits do not overlap with the training or evaluation
-datasets used for the reported experiments, and post-hoc was
-excluded from the tuning evaluations so as not to inflate its
-apparent transfer.
+metrics; this forecloses learning-rate cherry-picking. Hyperparameter-tuning was employed to determine a suitable number of datapoints and batch sizes for BCT and RMCT, the
+inclusion of the instruction-following samples for BCT, and the number of trajectories per datapoint, and
+KL-penalty coefficient for RMCT. These
+tuning splits dis not use the same training datasets and bias combinations as the main experiments, nor the same evaluation
+datasets. The post-hoc bias was
+excluded from the tuning evaluations.
 
 \paragraph{Data efficiency vs. compute.} RMCT extracts a learning
 signal from sample-level variation within each group of trajectories,
@@ -464,15 +398,27 @@ example as BCT does. This can make RMCT more data-efficient than BCT
 when target responses are expensive to produce or unavailable. The tradeoff is compute: each training input requires sampling $|\mathcal{X}|\cdot N$ trajectories per update, making RMCT substantially more computationally heavy per step than supervised BCT.
 
 \paragraph{Limitations and future work.}
+
+% limitation
+The reductions in $\text{BSR}_{\rightarrow}$ that we obtain under BCT
+are smaller than those reported by \citet{chua_bias-augmented_2024}.
+We attribute this principally to the difficulty gap between our
+training and evaluation distributions: HLE is substantially harder
+than the question sources used in the original work, and our
+training data, drawn from LogiQA and HellaSwag, are correspondingly
+easier than our evaluation distribution. Confirming this hypothesis
+would require either a direct replication of the original
+methodology or targeted ablations isolating the effects of
+evaluation difficulty, training-data difficulty, and the gap
+between the two; we leave these to future work.
+
 Our experiments are restricted to a narrow bias-following setting on
 multiple-choice questions, and we report results for only two
 non-frontier open-weight models. Future work will examine
 generalisation along both axes: of the method to other inconsistency
 problems, such as jailbreak susceptibility, persona drift, and
-evaluation gaming; and of the trained models to more capable,
-frontier-scale LLMs. The same construction also applies to consistency
-across input or output modalities and to other behavioural properties
-of the response, which we likewise leave to future work.
+evaluation gaming; and of the models to more capable,
+frontier-scale LLMs. 
 
 A second limitation concerns the interpretation of the switch-rate
 metrics. $\text{BSR}_{\rightarrow}$, $\text{BSR}_{\leftarrow}$, and
@@ -489,9 +435,8 @@ batch-invariant inference \citep{he_nondeterminism_2025}, which we
 leave to future work.
 
 A third limitation concerns our definition of bias verbalisation,
-which counts as a verbalisation any chain-of-thought content the model
-could not have produced if the cue were absent from its context. This
-criterion is lenient: it counts even oblique references to the cue as
+which counts as a verbalisation any text the model
+could not have reasonably generated if the cue were absent from its context. This criterion is lenient: it counts even oblique references to the cue as
 verbalisation, and so likely overstates the verbalisation rate that
 would be observed by a downstream monitor without privileged knowledge
 of the bias specifics. Future work should tighten this definition or,
@@ -508,16 +453,11 @@ largely unconstrained. On the sycophancy benchmark of
 Instruct and OpenAI GPT OSS 20B, RMCT matches BCT's held-out
 $\text{BSR}_{\rightarrow}$ reduction on Meta Llama 3.1 8B Instruct
 and exceeds it on OpenAI GPT OSS 20B, where BCT fails to generalise.
-Across both models, RMCT preserves the rate at which the chain of
-thought verbalises the prompt cue close to the base-model rate;
+Across both models, RMCT preserves the rate at which the model verbalises the bias close to the base-model rate;
 BCT, by contrast, substantially suppresses verbalisation across both
 the trained and the held-out biases. We read this divergence as
-direct empirical evidence of the obfuscation pressure that motivates
-selective consistency training: a verbalisation-rate monitor
-calibrated on the base model would fail to flag bias-driven answers
-under BCT, while remaining calibrated under RMCT. By severing the
-link between behavioural consistency and chain-of-thought content,
-RMCT offers a path to consistency training that does not trade
+direct empirical evidence of the obfuscation pressure that motivated
+selective consistency training. RMCT offers a path to consistency training that does not trade
 behavioural robustness against monitorability.
 
 \bibliography{references, ai_safety}
@@ -569,13 +509,16 @@ one. The cue is the pattern of consistently incorrect labelling.
 
 \section{Training hyperparameters}
 \label{app:hyperparameters}
+
+\todo{state all hyperparameters don't skip the ones stated in the main text}
+
 All training uses LoRA adapters of rank~8.
 
-\paragraph{BCT.} A midway checkpoint is saved every 16 steps.
+\paragraph{BCT.} Uses a batch size of 128
 
-\paragraph{RMCT.} Rollouts are sampled at temperature~1.0 with up to
+\paragraph{RMCT.} Uses a batch size of 4. Rollouts are sampled at temperature~1.0 with up to
 20{,}480 generated tokens. The KL penalty to a fixed reference policy
-is~0.05 and the policy update uses the standard PPO clipped objective.
+is~0.05. 
 
 \paragraph{Learning-rate pooling.} For each method-model combination
 we run three learning rates~$\{1.0,\,2.86,\,5.0\} \times 10^{-4}$ and
@@ -600,7 +543,7 @@ consistency signal rather than by drift from fine-tuning.
 
 The controls also rule out an obfuscation null hypothesis for BCT.
 Controls preserve bias verbalisation near the base rate
-(Figure~\ref{fig:app-ba}), so the BVR reduction seen for BCT proper
+(Figure~\ref{fig:app-ba}) \todo{fix figure} , so the BVR reduction seen for BCT proper
 is specifically attributable to training the model to match a
 clean-prompt response on biased inputs. The RMCT controls likewise
 leave BVR within standard error of base, ruling out the alternative
@@ -622,7 +565,7 @@ Figures~\ref{fig:app-pro-bsr}, \ref{fig:app-anti-bsr}, and
 $\text{BSR}_{\leftarrow}$, and $\text{BSR}_{\text{tot}}$ for both
 models. The DA-only panels (left) reproduce the main-text plot with
 controls overlaid; the DA+WFS panels (right) extend the picture to a
-richer training mix.
+richer training mix. \todo{only report da. report da+wfs results only in appendix G, and then too only show the main paper figures but for da + wfs, no need to repeat all of the figures}. 
 
 For both models the away-from-bias rate is small relative to the
 towards-bias rate, so the total switch rate is dominated by
@@ -677,7 +620,9 @@ Significance markers as in Figure~\ref{fig:app-pro-bsr}. Error bars are two bino
 \label{fig:app-total-bsr}
 \end{figure*}
 
-\subsection{Verbalised and unverbalised splits}
+\subsection{Verbalised and unverbalised splits} 
+
+\todo{unnecessary, remove section and corresponding figures}
 
 We split each question by whether the model verbalised the bias in
 its chain of thought on the biased prompt. The verbalised and
@@ -786,6 +731,7 @@ Figure~\ref{fig:app-pro-bsr}. Error bars are two binomial standard errors (appro
 
 \section{Bias verbalisation details}
 \label{app:ba}
+\todo{unnecessary, remove section and corresponding figures}
 
 Figure~\ref{fig:app-ba} reports the unconditional bias verbalisation
 rate (BVR) under the biased prompt, and Figure~\ref{fig:app-ba-changed}
@@ -840,6 +786,7 @@ Figure~\ref{fig:app-pro-bsr}. Error bars are two binomial standard errors (appro
 
 \section{Accuracy}
 \label{app:accuracy}
+\todo{only report unbiased accuracy, also no need for unbiased bmr}
 
 We report two accuracy metrics: accuracy under the biased prompt in
 Figure~\ref{fig:app-acc-biased}, and accuracy under the unbiased
