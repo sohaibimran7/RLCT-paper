@@ -283,7 +283,7 @@ Appendix~\ref{app:control-results}.
 
 Figure~\ref{fig:main-pro-bsr} reports the towards-bias switch rate
 ($\text{BSR}_{\rightarrow}$) on the HLE evaluation set;
-Figure~\ref{fig:main-ba} reports the bias verbalisation rate (BVR).
+Figure~\ref{fig:main-ba} reports the bias verbalisation rate (BVR) on the towards-bias switch subset.
 Results for the DA+WFS training regime, the matched controls, the
 away-from-bias and total switch rates, the verbalised/unverbalised
 splits, and accuracy are reported in the appendix.
@@ -319,21 +319,16 @@ reported in Appendix~\ref{app:control-results}.}
 
 %% Jannes: this paragraph is too detailed -- most of the numbers are readable straight off the plot, trim accordingly.
 \paragraph{Bias following.}
-On the training bias both methods substantially reduce the
-towards-bias switch rate relative to the base model. On Meta Llama
-3.1 8B Instruct, BCT reduces $\text{BSR}_{\rightarrow}$ from $0.64$
-to $0.15$ and RMCT reduces it to $0.16$; on OpenAI GPT OSS 20B, BCT
-reduces $\text{BSR}_{\rightarrow}$ from $0.30$ to $0.11$ and RMCT
-reduces it to $0.21$. RMCT therefore matches BCT's in-distribution
-reduction on Meta Llama 3.1 8B Instruct but reduces
-$\text{BSR}_{\rightarrow}$ less than BCT on OpenAI GPT OSS 20B.
-Improvements transfer to the five held-out bias types but not
-uniformly: BCT decreases $\text{BSR}_{\rightarrow}$ more than RMCT on
-wrong-few-shot for Meta Llama 3.1 8B Instruct and on
+On the training bias both methods significantly reduce the
+towards-bias switch rate relative to the base model. BCT reduces Llama $\text{BSR}_{\rightarrow}$ from $0.64$
+to $0.15$ and RMCT reduces it to $0.16$; BCT
+reduces GPT $\text{BSR}_{\rightarrow}$ from $0.30$ to $0.11$ and RMCT
+reduces it to $0.21$. The $\text{BSR}_{\rightarrow}$ reduction transfers to the five held-out bias types but not
+uniformly: BCT decreases Llama $\text{BSR}_{\rightarrow}$ more than RMCT on
+wrong-few-shot and on
 suggested-answer for both models, while RMCT decreases
 $\text{BSR}_{\rightarrow}$ more than BCT on post-hoc for both
-models, where BCT increases the switch rate above base on OpenAI GPT
-OSS 20B from $0.23$ to $0.33$. Averaged over the five held-out
+models, where BCT increases GPT $\text{BSR}_{\rightarrow}$ from $0.23$ to $0.33$. Averaged over the five held-out
 biases the two methods are within standard error of each other. On
 Meta Llama 3.1 8B Instruct, BCT reaches $0.38$ and RMCT reaches
 $0.36$, against a base rate of $0.45$; on OpenAI GPT OSS 20B, BCT
