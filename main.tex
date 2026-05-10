@@ -115,13 +115,13 @@ These concerns motivate \emph{selective consistency training}: enforcing consist
 Consistency training is a class of methods that train an LLM policy $\pi_\theta$ to behave similarly across a set of related inputs $\mathcal{X}$. Methods differ in what behavioural property is held consistent and how supervision is provided. For example, $\mathcal{X}$ might consist of a clean prompt and one or more variants with injected cues.
 
 \paragraph{Bias-Augmented Consistency Training.}
-BCT \citep{chua_bias-augmented_2024} considers one input $x_0 \in \mathcal{X}$ as a reference (typically a clean prompt), samples a target response $\tau \sim \pi_{\theta_0}(\cdot \mid x_0)$ from the initial policy on this reference, and fine-tunes $\pi_\theta$ to produce $\tau$ on the remaining inputs $\mathcal{X} \setminus \{x_0\}$:
-\begin{equation}
+BCT \citep{chua_bias-augmented_2024} considers one input $x_0 \in \mathcal{X}$ as a reference (typically a clean prompt), samples a target response $\tau \sim \pi_{\theta_0}(\cdot \mid x_0)$ from the initial policy on this reference, and fine-tunes $\pi_\theta$ to produce $\tau$ on the remaining inputs $\mathcal{X} \setminus \{x_0\}$. BCT minimizes the loss function:
+\begin{equation} \label{eq: BCT loss}
 \mathcal{L}_{\text{BCT}}(\theta) = -\sum_{x \in \mathcal{X} \setminus \{x_0\}} \log \pi_\theta(\tau \mid x)
-\end{equation}
+\end{equation} 
 
 \paragraph{Activation Consistency Training.}
-ACT \citep{irpan_consistency_2025} also picks a reference input $x_0$ and instead matches residual-stream activations on the remaining inputs $\mathcal{X} \setminus \{x_0\}$ to those on the reference $x_0$. Let $h_{\theta,\ell,t}(x)$ denote the residual stream of $\pi_\theta$ at layer $\ell$ and token position $t$. ACT minimises
+ACT \citep{irpan_consistency_2025} also picks a reference input $x_0$ and instead matches residual-stream activations on the remaining inputs $\mathcal{X} \setminus \{x_0\}$ to those on the reference $x_0$. Let $h_{\theta,\ell,t}(x)$ denote the residual stream of $\pi_\theta$ at layer $\ell$ and token position $t$. ACT minimises the loss function:
 \begin{equation}
 \mathcal{L}_{\text{ACT}}(\theta) = \sum_{x \in \mathcal{X} \setminus \{x_0\}} \mathbb{E}_{\ell,\, t}\Bigl[\bigl\| h_{\theta,\ell,t}(x) - \operatorname{sg}\bigl(h_{\theta_0,\ell,t}(x_0)\bigr) \bigr\|^2\Bigr]
 \end{equation}
@@ -219,56 +219,30 @@ including settings where no clean reference is available.
 \section{Experiments}
 \label{sec:experiments}
 
-\subsection{Environment and bias types}
-We benchmark RMCT against BCT on the sycophancy benchmark of \citet{chua_bias-augmented_2024}. The benchmark consists of 
-
-multiple-choice questions to which a small
-prompt-level perturbation to bias the response towards an incorrect choice. We use six bias types from the benchmark: suggested
-answer, distractor fact, distractor argument, post hoc, spurious few-shot squares, and wrong few-shot. Brief descriptions are given in
-Appendix~\ref{app:biases}; see \citet{chua_bias-augmented_2024} for
-full specifications.
+\subsection{Dataset} \label{sec: dataset}
+We benchmark RMCT against BCT on the sycophancy dataset of \citet{chua_bias-augmented_2024}. The dataset consists of multiple bias types, each of which apply a prompt-level perturbation to a multiple-choice question, to try to bias the respondent towards an incorrect choice. We use six bias types from the dataset: suggested answer, distractor fact, distractor argument, post hoc, spurious few-shot squares, and wrong few-shot. Brief descriptions of each bias type are given in Appendix~\ref{app:biases}. Refer to \citet{chua_bias-augmented_2024} for further details of the dataset. 
 
 \subsection{Models}
 We run experiments on two open-weight models: Meta Llama 3.1 8B
 Instruct and OpenAI GPT OSS 20B. For Meta Llama 3.1 8B Instruct, we additionally instruct the model
 to reason step-by-step before answering. OpenAI GPT OSS 20B is a reasoning model that automatically
 produces a chain of thought before its final answer, so no such
-instruction is added. All training uses LoRA adapters of rank 8.
+instruction is added.
 
 \subsection{Train/evaluation split}
 %% Jannes: how much data-generation detail do we need in the main text? Mostly defer to the appendix?
-We train on the held-in question sources LogiQA and HellaSwag (1024
-questions sampled from each, drawn from the test split following the
-BCT data-generation procedure) and evaluate on a held-out question
-source, the multiple-choice subset of Humanity's Last Exam (HLE), with
-100 questions per bias type
-per checkpoint and 400 questions per bias type for the base-model
-reference. For BCT, an additional 2048 instruction-following
-samples (prompts drawn from the Cleaned Alpaca dataset, with
-completions re-sampled from the target model so the supervision is
-self-distilled) are mixed into the training data to mitigate
-degradation on unrelated tasks. We train on the
-distractor-argument bias only and evaluate on all six bias types,
-which lets us measure transfer of the consistency objective to unseen
-biases. An additional regime that trains on a mixture of
-distractor-argument and wrong-few-shot prompts is reported in
+We train on distractor-argument bias applied to multiple choice questions from the LogiQA and HellaSwag datasets and evaluate on all six biases mentions in section \ref{sec: dataset} applied to the multiple-choice subset of the Humanity's Last Exam (HLE) dataset. For BCT, additional instruction-following samples drawn from the target model on the Cleaned Alpaca dataset \todo{cite alpaca-cleaned} are mixed into the training data following \citet{chua_bias-augmented_2024}. Additional experiments that trains on a mixture of
+distractor-argument and wrong-few-shot biases are detailed in
 Appendix~\ref{app:da-wfs}.
 
 \subsection{Training settings}
-BCT is fine-tuned by SFT for one epoch on the 2048 BCT samples plus
-the 2048 instruction-following samples, at batch size~128 (32
-optimisation steps). RMCT is trained with GRPO for one epoch over 64
-prompts at batch size~4 prompts per update (16 update steps); each
-prompt is expanded into a group of $|\mathcal{X}|=2$ inputs
-(biased and unbiased) with $N=128$ rollouts per input, and the
-consistency reward uses the unbiased prompt as the reference. For each method-model combination we
-run three learning rates and pool the resulting checkpoints when
-reporting metrics, which gives a binomial standard error without
-tripling the rollout budget. Remaining hyperparameters are listed in
+For BCT, we fine-tune for one epoch on 2048 datapoints using the BCT loss function (equation \ref{eq: BCT loss}) while interleaving 2048 instruction-following datapoints. For RMCT, we train with GRPO for one epoch over 64 datapoints, sampling 128 trajectories for both the biased and unbiased input for each datapoint. The
+consistency reward uses the unbiased prompt as the reference \todo{ensure reader has enough context to understand this}. All training uses LoRA adapters of rank 8. For each method-model combination we repeat training for three learning rates and pool the resulting checkpoints when reporting metrics. Remaining hyperparameters are listed in
 Appendix~\ref{app:hyperparameters}.
 
 \subsection{Metrics}
-For each evaluation question $x$ we sample one response under the
+\todo{unify symbology with equations 1-5}
+For each bias and evaluation question $x$ we sample one response under the
 biased prompt and one under the unbiased prompt, and let $b(x), u(x)
 \in \{0,1\}$ indicate whether the model selected the biased option on
 each. We report three per-question switch rates, each averaged over
@@ -280,7 +254,7 @@ questions:
 \text{BSR}_{\text{tot}}  &= \tfrac{1}{|X|}\textstyle\sum_x |b(x) - u(x)|,
 \end{align*}
 which we call the \emph{towards-bias switch rate}, the
-\emph{away-from-bias switch rate}, and the \emph{total switch rate}
+\emph{away-from-bias switch rate}, and the \emph{total bias switch rate}
 respectively. The towards-bias switch rate counts questions where
 adding the bias prompt switches the model from a non-biased to the
 biased answer; the away-from-bias switch rate counts the reverse
@@ -290,24 +264,16 @@ the directional signal: a model that switches toward the bias on half
 its questions and away on the other half has $\text{BSR}_{\text{tot}}
 = 1$ but a marginal-rate difference of $0$. The main text reports only the
 towards-bias switch rate; the away-from-bias and total switch rates
-are reported in Appendix~\ref{app:switch-rates}. We also report the \emph{Bias Verbalisation
-Rate} (BVR), the rate at which the model's chain of thought
-verbalises the perturbation (scored by Google Gemma 4 31B); a drop
-in BVR after consistency training indicates obfuscation.
+are reported in Appendix~\ref{app:switch-rates}. 
+
+We also report the \emph{Bias Verbalisation Rate} (BVR) as the proportion of datapoints for which, given the biased question, the model includes any text that would not make sense without the biasing perturbation. A reduction in BVR after consistency training indicates obfuscation. We discuss this framing of bias verbalisation and obfuscation in section \ref{sec: discussion}.
 
 \subsection{Baselines}
-We compare RMCT against three baselines: (i) the untrained base
-model; (ii) BCT trained on a matched training set (same question
-sources, same training bias regime); and (iii) for each of BCT and
-RMCT, a \emph{control} variant trained on the same questions but with
-the bias-inducing perturbation removed: the model is trained for
-consistency between two unbiased copies of the prompt rather than
-between the biased and unbiased prompt. The control isolates
-training-induced drift from the consistency signal: any change in the
-switch rates or BVR observed in the control reflects the effect of
-fine-tuning on unbiased data alone, leaving the residual gap between
-the control and the consistency-trained run as the contribution of
-the consistency objective itself. Control results are reported in
+We compare RMCT against three baselines: the untrained base
+model, BCT, and for each of BCT and
+RMCT, a \emph{control} variant trained for
+consistency between two copies of the unbiased input rather than
+between the biased and unbiased input for each datapoint. The control isolates training-induced drift from the consistency training signal: any change in the switch rates or BVR observed in the control reflects the effect of fine-tuning with unbiased data alone, leaving the residual gap between the control and the consistency-trained run as the contribution of the consistency objective itself. Control results are reported in
 Appendix~\ref{app:control-results}.
 
 \subsection{Results}
@@ -389,7 +355,7 @@ largest between-method gap is on extraneous-squares for Meta Llama 3.1
 8B Instruct, where BCT reduces BVR from $0.61$ to $0.09$ while RMCT
 moves it to $0.76$.
 
-\section{Discussion}
+\section{Discussion} \label{sec: discussion}
 
 \paragraph{Recap.}
 %% Jannes: the "without constraining other aspects" framing is a bit too strong -- soften.
