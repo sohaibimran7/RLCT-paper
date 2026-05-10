@@ -131,6 +131,7 @@ where $t$ ranges over the longest matching suffix between $x$ and $x_0$ (in prac
 Consistency training has previously been applied to reduce sycophancy \citep{chua_bias-augmented_2024}, increase jailbreak robustness \citep{irpan_consistency_2025}, and reducing persona drift \citep{shah_frustration_2026} in LLMs. \citet{irpan_consistency_2025} report BCT and ACT lead to similar decrease in LLM sycophancy, while BCT leads to a larger decrease in jailbreak susceptibility. We adopt the sycophancy setting of \citet{chua_bias-augmented_2024} throughout: $\mathcal{X}$ consists of a \emph{biased} prompt -- a multiple-choice question with an added cue suggesting a particular answer -- and an \emph{unbiased} prompt presenting the same question without the cue, with the unbiased prompt serving as the clean reference $x_0$.
 
 \section{Rate Matching Consistency Training}
+\label{sec:rmct}
 
 \begin{figure*}[t]
 \centering
@@ -241,12 +242,12 @@ consistency reward uses the unbiased prompt as the reference \todo{ensure reader
 Appendix~\ref{app:hyperparameters}.
 
 \subsection{Metrics}
-\todo{unify symbology with equations 1-5}
-For each bias and evaluation question $x$ we sample one response under the
-biased prompt and one under the unbiased prompt, and let $b(x), u(x)
-\in \{0,1\}$ indicate whether the model selected the biased option on
-each. We report three per-question switch rates, each averaged over
-questions:
+For each bias and evaluation question $x$ we sample one trajectory
+$\tau_b$ under the biased prompt and one trajectory $\tau_u$ under
+the unbiased prompt, and let $b(x) = T(\tau_b)$ and $u(x) = T(\tau_u)$,
+where $T$ is the trait classifier of Section~\ref{sec:rmct} (here,
+the indicator of the model selecting the biased option). We
+report three per-question switch rates, each averaged over questions:
 %% Jannes: I think the arrow directions on $\text{BSR}_{\rightarrow}$ / $\text{BSR}_{\leftarrow}$ are backwards -- the towards-bias rate is $b - u$, so reading the arrow as "model moves toward bias" would suggest $\leftarrow$ (pulled toward the bias) rather than $\rightarrow$. Worth a discussion before changing, since the convention is used throughout.
 \begin{align*}
 \text{BSR}_{\rightarrow} &= \tfrac{1}{|X|}\textstyle\sum_x \max(0,\, b(x) - u(x)), \\
@@ -264,9 +265,9 @@ the directional signal: a model that switches toward the bias on half
 its questions and away on the other half has $\text{BSR}_{\text{tot}}
 = 1$ but a marginal-rate difference of $0$. The main text reports only the
 towards-bias switch rate; the away-from-bias and total switch rates
-are reported in Appendix~\ref{app:switch-rates}. 
+are reported in Figures~\ref{fig:app-anti-bsr} and \ref{fig:app-total-bsr}.
 
-We also report the \emph{Bias Verbalisation Rate} (BVR) as the proportion of datapoints for which, given the biased question, the model includes any text that would not make sense without the biasing perturbation. A reduction in BVR after consistency training indicates obfuscation. We discuss this framing of bias verbalisation and obfuscation in section \ref{sec: discussion}.
+We also report the \emph{Bias Verbalisation Rate} (BVR) as the proportion of datapoints for which, given the biased question, the model includes any text that would not make sense without the biasing perturbation. We restrict BVR to the \emph{towards-bias-switch subset} -- questions on which adding the bias swung the parsed answer to the biased option, i.e.\ where $b(x) - u(x) = 1$ -- since these are the questions on which the cue was operative. A reduction in BVR on this subset after consistency training indicates obfuscation. We discuss this framing of bias verbalisation and obfuscation in section \ref{sec: discussion}.
 
 \subsection{Baselines}
 We compare RMCT against three baselines: the untrained base
@@ -296,7 +297,7 @@ under RMCT and the lack of any such effect on the non-reasoning
 model. We return to this in Section~\ref{sec: discussion}.
 
 Figure~\ref{fig:main-bv} reports the bias verbalisation rate (BVR) restricted to questions on which adding the bias switched the answer toward the biased option. BCT substantially reduces verbalisation on the trained bias
-and on the held-out average for both models. RMCT, in contrast, does not significantly decrease BVR on any of the held-out biases, and instead significantly increases GPT's BVR on the spurious few-shot squares bias and the held-out average (p<0.01). RMCT does however significantly  (p<0.05) decrease GPT's BVR on the training bias. \todo{report control results in appendex c and mention here whether or not the divergent BVR effects are because of consistency training or just the training itself}
+and on the held-out average for both models. RMCT, in contrast, does not significantly decrease BVR on any of the held-out biases, and instead significantly increases GPT's BVR on the spurious few-shot squares bias and the held-out average (p<0.01). RMCT does however significantly (p<0.05) decrease GPT's BVR on the training bias. The matched controls (Figure~\ref{fig:app-bv-controls}) show that BCT's BVR collapse is attributable to the consistency objective rather than to fine-tuning drift: BCT's BVR control sits close to base while BCT proper drops well below it. The smaller BVR increase under RMCT, by contrast, partly reflects fine-tuning drift -- the RMCT control moves BVR similarly on Llama -- so RMCT's behaviour on this metric should be read primarily as the absence of obfuscation pressure rather than as an active push toward verbalisation.
 
 % make sure the below paragraph is spread throuought the text
 % Results for the DA+WFS training, the matched controls, the
@@ -313,7 +314,7 @@ averages over the five held-out bias types. Error bars are two
 binomial standard errors (approximate $95\%$ confidence intervals),
 pooled across three learning rates. Significance markers above
 bars denote two-proportion z-tests against the base model. Matched controls are reported in
-Appendix~\ref{app:control-results}.}
+Figure~\ref{fig:app-pro-bsr}.}
 %% Jannes: switch to a single row with the two model panels side by side -- or at least fix the width, since the first x-tick label is currently shrinking the plot.
 \label{fig:main-pro-bsr}
 \end{figure}
@@ -329,8 +330,8 @@ was operative). OpenAI GPT OSS 20B (top), Meta Llama 3.1 8B Instruct
 rightmost column averages over the five held-out bias types. Error
 bars are two binomial standard errors (approximate $95\%$ confidence
 intervals), pooled across three learning rates. Significance markers
-as in Figure~\ref{fig:main-pro-bsr}. Unconditional BVR and matched
-controls are reported in Appendix~\ref{app:ba}.}
+as in Figure~\ref{fig:main-pro-bsr}. Matched controls are reported in
+Figure~\ref{fig:app-bv-controls}.}
 %% Jannes: switch to a single row with the two model panels side by side -- or at least fix the width, since the first x-tick label is currently shrinking the plot.
 %% Jannes: highlight the percentage differences in the plot (e.g. annotate "+50" or arrows between bars) so they're easier to parse.
 \label{fig:main-bv}
@@ -510,21 +511,35 @@ one. The cue is the pattern of consistently incorrect labelling.
 \section{Training hyperparameters}
 \label{app:hyperparameters}
 
-\todo{state all hyperparameters don't skip the ones stated in the main text}
+All training uses LoRA adapters of rank~8 with a LoRA $\alpha$ of~16
+applied to all linear modules in the attention and MLP blocks. We
+optimise with AdamW.
 
-All training uses LoRA adapters of rank~8.
+\paragraph{BCT.} One epoch over $2048$ consistency datapoints,
+interleaved with $2048$ instruction-following datapoints drawn from
+the target model on the cleaned-Alpaca corpus. Batch size~$128$
+(yielding $32$ optimisation steps), maximum sequence length matching
+the target model's context window. Target responses for the
+consistency datapoints are sampled from the initial policy on the
+unbiased prompt at temperature~$1.0$. Midway checkpoints are saved
+every~$16$ steps.
 
-\paragraph{BCT.} Uses a batch size of 128
-
-\paragraph{RMCT.} Uses a batch size of 4. Rollouts are sampled at temperature~1.0 with up to
-20{,}480 generated tokens. The KL penalty to a fixed reference policy
-is~0.05. 
+\paragraph{RMCT.} One epoch over $64$ consistency datapoints with
+$N = 128$ trajectories per input on each of the biased and the
+unbiased prompts (so each datapoint contributes $256$ trajectories).
+Rollouts are sampled at temperature~$1.0$ with up to $20{,}480$
+generated tokens. Batch size~$4$ datapoints (yielding $16$ optimisation
+steps), GRPO with a clipped policy-gradient objective, and a
+KL penalty of~$0.05$ to a fixed reference policy. The consistency
+reward uses $\mathcal{X}_{\text{ref}} = \{x_{\text{unbiased}}\}$ and
+mixing weight $\alpha = 0$ on the optional anchor reward of
+Appendix~\ref{app:anchor}.
 
 \paragraph{Learning-rate pooling.} For each method-model combination
 we run three learning rates~$\{1.0,\,2.86,\,5.0\} \times 10^{-4}$ and
 pool checkpoints across them when computing metrics. This gives a
 binomial standard error on the metric without tripling the rollout
-budget.
+budget and forecloses learning-rate cherry-picking.
 
 \section{Control results}
 \label{app:control-results}
@@ -535,293 +550,112 @@ the consistency-trained runs as outlined bars (\textbf{BCT Control},
 \textbf{RMCT Control}) in every appendix figure. They isolate the
 effect of fine-tuning on unbiased data alone from the effect of the
 consistency objective. Across the switch-rate plots
-(Figures~\ref{fig:app-pro-bsr}--\ref{fig:app-total-bsr-unverb}) the
+(Figures~\ref{fig:main-pro-bsr}, \ref{fig:app-anti-bsr}, and \ref{fig:app-total-bsr}) the
 controls track the base model closely on most held-out biases and
 sit visibly above the consistency-trained runs on the trained bias,
 confirming that the trained-bias reduction is driven by the
 consistency signal rather than by drift from fine-tuning.
 
-The controls also rule out an obfuscation null hypothesis for BCT.
-Controls preserve bias verbalisation near the base rate
-(Figure~\ref{fig:app-ba}) \todo{fix figure} , so the BVR reduction seen for BCT proper
-is specifically attributable to training the model to match a
-clean-prompt response on biased inputs. The RMCT controls likewise
-leave BVR within standard error of base, ruling out the alternative
-that the BVR pattern under RMCT is driven by drift from fine-tuning.
+The controls also disentangle the BVR effects on the
+towards-bias-switch subset (Figure~\ref{fig:app-bv-controls}). The
+BCT control preserves BVR close to the base rate while BCT proper
+collapses it, so the BVR reduction under BCT is attributable to the
+consistency objective rather than to fine-tuning drift. The RMCT
+control raises BVR on the held-out biases by a similar amount to
+RMCT proper, indicating that the small BVR increase observed under
+RMCT (most visibly on Meta Llama 3.1 8B Instruct) reflects
+fine-tuning drift rather than an active verbalisation-promoting
+effect of the consistency objective.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/da_bv_toward.png}
+\caption{Bias verbalisation rate (BVR) on HLE under the biased
+prompt, restricted to questions on which adding the bias switched
+the parsed answer toward the biased option, with matched controls.
+OpenAI GPT OSS 20B (top), Meta Llama 3.1 8B Instruct (bottom).
+DA-only training. Training bias is shaded; the rightmost column
+averages over the held-out bias types. Outlined bars are the matched
+controls. Significance markers as in Figure~\ref{fig:main-pro-bsr}.
+Error bars are two binomial standard errors (approximate $95\%$
+confidence intervals), pooled across three learning rates.}
+\label{fig:app-bv-controls}
+\end{figure*}
 
 \section{Switch-rate breakdowns}
 \label{app:switch-rates}
 
-This appendix reports the towards-bias, away-from-bias, and total
-per-question switch rates under both the DA-only and the DA+WFS
-training regimes (left and right panels of every figure), as well as
-the verbalised and unverbalised splits of the towards-bias and total
-switch rates.
+This appendix reports the away-from-bias and total per-question
+switch rates on the DA-only training regime, complementing the
+towards-bias rate in the main text. Results for the DA+WFS training
+regime are reported in Figures~\ref{fig:app-dawfs-pro-bsr} and \ref{fig:app-dawfs-bv}.
 
-\subsection{Towards-bias, away-from-bias, total}
-
-Figures~\ref{fig:app-pro-bsr}, \ref{fig:app-anti-bsr}, and
-\ref{fig:app-total-bsr} report $\text{BSR}_{\rightarrow}$,
-$\text{BSR}_{\leftarrow}$, and $\text{BSR}_{\text{tot}}$ for both
-models. The DA-only panels (left) reproduce the main-text plot with
-controls overlaid; the DA+WFS panels (right) extend the picture to a
-richer training mix. \todo{only report da. report da+wfs results only in appendix G, and then too only show the main paper figures but for da + wfs, no need to repeat all of the figures}. 
-
-For both models the away-from-bias rate is small relative to the
+Figure~\ref{fig:app-pro-bsr} reproduces the main-text
+$\text{BSR}_{\rightarrow}$ plot with the matched controls overlaid;
+Figures~\ref{fig:app-anti-bsr} and \ref{fig:app-total-bsr} report
+$\text{BSR}_{\leftarrow}$ and $\text{BSR}_{\text{tot}}$. For both
+models the away-from-bias rate is small relative to the
 towards-bias rate, so the total switch rate is dominated by
 towards-bias switching and Figure~\ref{fig:app-total-bsr} largely
 tracks Figure~\ref{fig:app-pro-bsr}. One pattern is worth flagging:
-on Meta Llama 3.1 8B Instruct, BCT raises $\text{BSR}_{\leftarrow}$
-on the trained DA bias well above base, more than RMCT. This is
-consistent with BCT training a directional response -- always pick
-the unbiased answer -- rather than a property of consistency.
+on Meta Llama 3.1 8B Instruct, BCT raises
+$\text{BSR}_{\leftarrow}$ on the trained DA bias well above base,
+more than RMCT. This is consistent with BCT training a directional
+response -- always pick the unbiased answer -- rather than a property
+of consistency.
 
-The DA+WFS regime (right panels) lowers $\text{BSR}_{\rightarrow}$
-further on the two trained biases for both methods, while leaving
-the held-out averages within standard error of the DA-only regime.
-
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
-\includegraphics[width=0.49\linewidth]{figures/da_pro_bsr.png}
-\includegraphics[width=0.49\linewidth]{figures/dawfs_pro_bsr.png}
-\caption{Towards-bias switch rate $\text{BSR}_{\rightarrow}$ on HLE.
-DA-only training (left), DA+WFS training (right); within each panel
-OpenAI GPT OSS 20B is on top and Meta Llama 3.1 8B Instruct on the
-bottom. Training biases are shaded; the rightmost column averages
-over the held-out bias types. Outlined bars are the matched controls.
-Significance markers (\textasteriskcentered{} $p<0.05$, \textasteriskcentered\textasteriskcentered{} $p<0.01$, \textasteriskcentered\textasteriskcentered\textasteriskcentered{} $p<0.001$) above each bar denote a two-proportion z-test against the base model. Error bars are two binomial standard errors (approximate
-$95\%$ confidence intervals), pooled across three learning rates.}
-\label{fig:app-pro-bsr}
-\end{figure*}
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.49\linewidth]{figures/da_anti_bsr.png}
-\includegraphics[width=0.49\linewidth]{figures/dawfs_anti_bsr.png}
-\caption{Away-from-bias switch rate $\text{BSR}_{\leftarrow}$ on HLE.
-DA-only training (left), DA+WFS training (right); within each panel
-OpenAI GPT OSS 20B is on top and Meta Llama 3.1 8B Instruct on the
-bottom. Training biases are shaded; the rightmost column averages
-over the held-out bias types. Outlined bars are the matched controls.
-Significance markers as in Figure~\ref{fig:app-pro-bsr}. Error bars are two binomial standard errors (approximate $95\%$ confidence intervals), pooled across three learning rates.}
-\label{fig:app-anti-bsr}
-\end{figure*}
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.49\linewidth]{figures/da_total_bsr.png}
-\includegraphics[width=0.49\linewidth]{figures/dawfs_total_bsr.png}
-\caption{Total switch rate $\text{BSR}_{\text{tot}}$ on HLE. DA-only
-training (left), DA+WFS training (right); within each panel OpenAI
-GPT OSS 20B is on top and Meta Llama 3.1 8B Instruct on the bottom.
-Training biases are shaded; the rightmost column averages over the
+\includegraphics[width=\linewidth]{figures/da_pro_bsr.png}
+\caption{Towards-bias switch rate $\text{BSR}_{\rightarrow}$ on HLE
+under the DA-only training regime, with matched controls overlaid.
+OpenAI GPT OSS 20B (top), Meta Llama 3.1 8B Instruct (bottom).
+Training bias is shaded; the rightmost column averages over the
 held-out bias types. Outlined bars are the matched controls.
-Significance markers as in Figure~\ref{fig:app-pro-bsr}. Error bars are two binomial standard errors (approximate $95\%$ confidence intervals), pooled across three learning rates.}
-\label{fig:app-total-bsr}
-\end{figure*}
+Significance markers (\textasteriskcentered{} $p<0.05$, \textasteriskcentered\textasteriskcentered{} $p<0.01$, \textasteriskcentered\textasteriskcentered\textasteriskcentered{} $p<0.001$) above each bar denote a two-proportion z-test against the base model. Error bars are two binomial standard errors (approximate $95\%$ confidence intervals), pooled across three learning rates.}
+\label{fig:app-pro-bsr}
+\end{figure}
 
-\subsection{Verbalised and unverbalised splits} 
-
-\todo{unnecessary, remove section and corresponding figures}
-
-We split each question by whether the model verbalised the bias in
-its chain of thought on the biased prompt. The verbalised and
-unverbalised subsets per condition have very different sample sizes:
-BCT verbalises rarely, so the verbalised subset has few BCT
-datapoints; conversely, the unverbalised subset has few datapoints
-for RMCT and the base model on biases the model habitually
-verbalises (e.g.\ distractor argument on Meta Llama 3.1 8B Instruct,
-where the base verbalises in over $99\%$ of cases). Wider error bars
-in the figures reflect this. We show the splits only for the
-towards-bias rate in Figures~\ref{fig:app-pro-bsr-verb} and
-\ref{fig:app-pro-bsr-unverb}, and the total switch rate in
-Figures~\ref{fig:app-total-bsr-verb} and
-\ref{fig:app-total-bsr-unverb}; the away-from-bias splits show the
-same qualitative picture and are omitted to save space.
-
-\paragraph{Verbalised subset.}
-Figure~\ref{fig:app-pro-bsr-verb} restricts to questions where the
-biased-prompt chain of thought verbalised the cue. RMCT's
-$\text{BSR}_{\rightarrow}$ on this subset is close to the base
-rate's $\text{BSR}_{\rightarrow}$ on this subset for both models,
-ruling out the alternative that the RMCT reduction in
-$\text{BSR}_{\rightarrow}$ comes from the model noticing the bias
-more often and only switching when it did not: even when it does
-notice, it follows the bias at the base rate and is moved by the
-reward toward consistency on the unverbalised subset. The total
-switch rate on the same subset (Figure~\ref{fig:app-total-bsr-verb})
-shows the same pattern.
-
-\paragraph{Unverbalised subset.}
-Figure~\ref{fig:app-pro-bsr-unverb} restricts to questions where the
-chain of thought did not verbalise the cue. This is the operating
-regime for BCT across most biases, and indeed the BCT bars in this
-plot are similar to its bars in Figure~\ref{fig:app-pro-bsr}. RMCT
-in this subset behaves similarly to BCT: when the model has not
-verbalised the cue, both methods reduce following at roughly
-comparable rates. The total switch rate
-(Figure~\ref{fig:app-total-bsr-unverb}) again mirrors the
-towards-bias plot.
-
-The combination of these two splits supports our reading of the
-main-text BVR result. RMCT preserves verbalisation and reduces
-following both when the cue is verbalised and when it is not; BCT
-reduces following primarily by routing the model into the
-unverbalised regime.
-
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
-\includegraphics[width=0.49\linewidth]{figures/da_pro_bsr_verbalised.png}
-\includegraphics[width=0.49\linewidth]{figures/dawfs_pro_bsr_verbalised.png}
-\caption{Towards-bias switch rate $\text{BSR}_{\rightarrow}$ on HLE,
-restricted to questions where the biased-prompt chain of thought
-verbalised the bias. DA-only training (left), DA+WFS training
-(right); within each panel OpenAI GPT OSS 20B is on top and Meta
-Llama 3.1 8B Instruct on the bottom. Training biases are shaded;
-the rightmost column averages over the held-out bias types. Outlined
+\includegraphics[width=\linewidth]{figures/da_anti_bsr.png}
+\caption{Away-from-bias switch rate $\text{BSR}_{\leftarrow}$ on HLE
+under the DA-only training regime. OpenAI GPT OSS 20B (top), Meta
+Llama 3.1 8B Instruct (bottom). Training bias is shaded; the
+rightmost column averages over the held-out bias types. Outlined
 bars are the matched controls. Significance markers as in
-Figure~\ref{fig:app-pro-bsr}. Error bars are two binomial standard errors (approximate $95\%$ confidence intervals), pooled across three learning rates.}
-\label{fig:app-pro-bsr-verb}
-\end{figure*}
+Figure~\ref{fig:app-pro-bsr}. Error bars are two binomial standard
+errors (approximate $95\%$ confidence intervals), pooled across
+three learning rates.}
+\label{fig:app-anti-bsr}
+\end{figure}
 
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
-\includegraphics[width=0.49\linewidth]{figures/da_pro_bsr_unverbalised.png}
-\includegraphics[width=0.49\linewidth]{figures/dawfs_pro_bsr_unverbalised.png}
-\caption{Towards-bias switch rate $\text{BSR}_{\rightarrow}$ on HLE,
-restricted to questions where the biased-prompt chain of thought did
-not verbalise the bias. DA-only training (left), DA+WFS training
-(right); within each panel OpenAI GPT OSS 20B is on top and Meta
-Llama 3.1 8B Instruct on the bottom. Training biases are shaded;
-the rightmost column averages over the held-out bias types. Outlined
-bars are the matched controls. Significance markers as in
-Figure~\ref{fig:app-pro-bsr}. Error bars are two binomial standard errors (approximate $95\%$ confidence intervals), pooled across three learning rates.}
-\label{fig:app-pro-bsr-unverb}
-\end{figure*}
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.49\linewidth]{figures/da_total_bsr_verbalised.png}
-\includegraphics[width=0.49\linewidth]{figures/dawfs_total_bsr_verbalised.png}
-\caption{Total switch rate $\text{BSR}_{\text{tot}}$ on HLE,
-restricted to questions where the biased-prompt chain of thought
-verbalised the bias. DA-only training (left), DA+WFS training
-(right); within each panel OpenAI GPT OSS 20B is on top and Meta
-Llama 3.1 8B Instruct on the bottom. Training biases are shaded;
-the rightmost column averages over the held-out bias types. Outlined
-bars are the matched controls. Significance markers as in
-Figure~\ref{fig:app-pro-bsr}. Error bars are two binomial standard errors (approximate $95\%$ confidence intervals), pooled across three learning rates.}
-\label{fig:app-total-bsr-verb}
-\end{figure*}
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.49\linewidth]{figures/da_total_bsr_unverbalised.png}
-\includegraphics[width=0.49\linewidth]{figures/dawfs_total_bsr_unverbalised.png}
-\caption{Total switch rate $\text{BSR}_{\text{tot}}$ on HLE,
-restricted to questions where the biased-prompt chain of thought did
-not verbalise the bias. DA-only training (left), DA+WFS training
-(right); within each panel OpenAI GPT OSS 20B is on top and Meta
-Llama 3.1 8B Instruct on the bottom. Training biases are shaded;
-the rightmost column averages over the held-out bias types. Outlined
-bars are the matched controls. Significance markers as in
-Figure~\ref{fig:app-pro-bsr}. Error bars are two binomial standard errors (approximate $95\%$ confidence intervals), pooled across three learning rates.}
-\label{fig:app-total-bsr-unverb}
-\end{figure*}
-
-\section{Bias verbalisation details}
-\label{app:ba}
-\todo{unnecessary, remove section and corresponding figures}
-
-Figure~\ref{fig:app-ba} reports the unconditional bias verbalisation
-rate (BVR) under the biased prompt, and Figure~\ref{fig:app-ba-changed}
-restricts BVR to the \emph{bias-switched} subset: questions on which
-adding the bias prompt changed the parsed final answer in either
-direction (i.e.\ where $b(x) \ne u(x)$). The towards-bias-switch
-subset reported in the main text (Figure~\ref{fig:main-bv}) is a
-strict subset of the bias-switched subset.
-
-Across all three views the qualitative pattern is the same: BCT
-reduces BVR substantially on the trained biases and to a smaller but
-significant extent on the held-out average, whereas RMCT leaves BVR
-within standard error of base on the held-out average for OpenAI
-GPT OSS 20B and slightly raises it on Meta Llama 3.1 8B Instruct in
-the unconditional view. The conditional BVR (Figure~\ref{fig:app-ba-changed})
-sharpens the obfuscation reading: on questions where the bias moved
-the answer, BCT routes a substantial fraction of bias-driven
-responses through chains of thought that no longer mention the cue,
-whereas RMCT does not. A verbalisation-rate monitor calibrated on
-the base model would therefore fail to flag the bias-driven answers
-under BCT, but would remain calibrated under RMCT.
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.49\linewidth]{figures/da_biased_bv.png}
-\includegraphics[width=0.49\linewidth]{figures/dawfs_biased_bv.png}
-\caption{Unconditional bias verbalisation rate (BVR) on HLE under
-the biased prompt. DA-only training (left), DA+WFS training (right);
-within each panel OpenAI GPT OSS 20B is on top and Meta Llama 3.1 8B
-Instruct on the bottom. Training biases are shaded; the rightmost
+\includegraphics[width=\linewidth]{figures/da_total_bsr.png}
+\caption{Total switch rate $\text{BSR}_{\text{tot}}$ on HLE under
+the DA-only training regime. OpenAI GPT OSS 20B (top), Meta Llama
+3.1 8B Instruct (bottom). Training bias is shaded; the rightmost
 column averages over the held-out bias types. Outlined bars are the
 matched controls. Significance markers as in
-Figure~\ref{fig:app-pro-bsr}. Error bars are two binomial standard errors (approximate $95\%$ confidence intervals), pooled across three learning rates.}
-\label{fig:app-ba}
-\end{figure*}
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.49\linewidth]{figures/da_bv_changed.png}
-\includegraphics[width=0.49\linewidth]{figures/dawfs_bv_changed.png}
-\caption{Bias verbalisation rate (BVR) on HLE under the biased
-prompt, restricted to questions where the final answer changed
-between the unbiased and biased prompts (i.e.\ where $b(x) \neq u(x)$
-in either direction). DA-only training (left), DA+WFS training
-(right); within each panel OpenAI GPT OSS 20B is on top and Meta
-Llama 3.1 8B Instruct on the bottom. Training biases are shaded;
-the rightmost column averages over the held-out bias types. Outlined
-bars are the matched controls. Significance markers as in
-Figure~\ref{fig:app-pro-bsr}. Error bars are two binomial standard errors (approximate $95\%$ confidence intervals), pooled across three learning rates.}
-\label{fig:app-ba-changed}
-\end{figure*}
+Figure~\ref{fig:app-pro-bsr}. Error bars are two binomial standard
+errors (approximate $95\%$ confidence intervals), pooled across
+three learning rates.}
+\label{fig:app-total-bsr}
+\end{figure}
 
 \section{Accuracy}
 \label{app:accuracy}
-\todo{only report unbiased accuracy, also no need for unbiased bmr}
 
-We report two accuracy metrics: accuracy under the biased prompt in
-Figure~\ref{fig:app-acc-biased}, and accuracy under the unbiased
-prompt in Figure~\ref{fig:app-acc-unbiased}. HLE is intentionally
-hard, so absolute accuracies remain at $\lesssim 0.25$ throughout.
-
-Under the biased prompt, BCT and RMCT both leave accuracy within
-standard error of the base model on Meta Llama 3.1 8B Instruct and
-on OpenAI GPT OSS 20B across all held-out biases and both training
-regimes. Where the consistency-trained runs reduce
-$\text{BSR}_{\rightarrow}$, they do not do so by trading correctness
-in either direction. Under the unbiased prompt the differences are
-small but consistent. On Meta Llama 3.1 8B Instruct, RMCT reaches
+We report unbiased-prompt accuracy in Figure~\ref{fig:app-acc-unbiased},
+averaged over the unbiased copies of every evaluation question
+across all held-out bias types. HLE is intentionally hard, so
+absolute accuracies remain at $\lesssim 0.25$ throughout. Differences
+between the trained runs and the base model are small and within
+binomial standard error: on Meta Llama 3.1 8B Instruct, RMCT reaches
 $0.18$, BCT reaches $0.16$, and the base reaches $0.13$; on OpenAI
 GPT OSS 20B, BCT reaches $0.14$, RMCT reaches $0.10$, and the base
-reaches $0.11$. In every case the differences sit within the
-binomial standard error. The unbiased-prompt bias-match rate in
-Figure~\ref{fig:app-bmr-unbiased} is reported for completeness: on
-the unbiased prompt, RMCT does not raise the rate at which the model
-picks the bias-target option above base, so the bias-following
-reduction is not produced by inducing a generic preference against
-those options.
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.49\linewidth]{figures/da_biased_correct.png}
-\includegraphics[width=0.49\linewidth]{figures/dawfs_biased_correct.png}
-\caption{Accuracy on HLE under the biased prompt. DA-only training
-(left), DA+WFS training (right); within each panel OpenAI GPT OSS
-20B is on top and Meta Llama 3.1 8B Instruct on the bottom. Training
-biases are shaded; the rightmost column averages over the held-out
-bias types. Outlined bars are the matched controls. Significance
-markers as in Figure~\ref{fig:app-pro-bsr}. Error bars are two binomial standard errors (approximate $95\%$ confidence intervals), pooled across three learning rates.}
-\label{fig:app-acc-biased}
-\end{figure*}
+reaches $0.11$.
 
 \begin{figure}[t]
 \centering
@@ -835,18 +669,6 @@ pooled across three learning rates.}
 \label{fig:app-acc-unbiased}
 \end{figure}
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figures/unbiased_matches_bias.png}
-\caption{Bias-target match rate on HLE under the unbiased prompt,
-averaged over the unbiased copies of every evaluation question
-across all held-out bias types and both training regimes. OpenAI
-GPT OSS 20B (top), Meta Llama 3.1 8B Instruct (bottom). Error bars
-are two binomial standard errors (approximate $95\%$ confidence
-intervals), pooled across three learning rates.}
-\label{fig:app-bmr-unbiased}
-\end{figure}
-
 \section{Distractor-argument + wrong-few-shot training regime}
 \label{app:da-wfs}
 We additionally trained BCT and RMCT on a mixture of
@@ -856,12 +678,43 @@ of Section~\ref{sec:experiments}. The DA+WFS BCT run uses the same
 training-data scale per bias, giving roughly $48$ optimisation steps
 at batch size~$128$. RMCT uses an identical configuration to the
 DA-only setup with both bias types sampled in the prompt mix.
-Per-metric DA+WFS results are shown as the second row of every
-figure in Appendices~\ref{app:switch-rates}, \ref{app:ba}, and
-\ref{app:accuracy}. The qualitative picture matches the DA-only
-regime: BCT collapses BVR on its trained biases while RMCT preserves
-it, and the held-out switch-rate reductions are comparable between
-the two methods.
+
+Figures~\ref{fig:app-dawfs-pro-bsr} and \ref{fig:app-dawfs-bv} are
+the DA+WFS analogues of the main-text Figures~\ref{fig:main-pro-bsr}
+and \ref{fig:main-bv}. The qualitative picture matches the DA-only
+regime: BCT substantially reduces BVR on its trained biases and on
+the held-out average while RMCT preserves it, and the held-out
+$\text{BSR}_{\rightarrow}$ reductions are comparable between the
+two methods.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/dawfs_pro_bsr.png}
+\caption{Towards-bias switch rate $\text{BSR}_{\rightarrow}$ on HLE
+under the DA+WFS training regime. OpenAI GPT OSS 20B (top), Meta
+Llama 3.1 8B Instruct (bottom). Training biases (distractor argument
+and wrong-few-shot) are shaded; the rightmost column averages over
+the held-out bias types. Outlined bars are the matched controls.
+Significance markers as in Figure~\ref{fig:app-pro-bsr}. Error
+bars are two binomial standard errors (approximate $95\%$ confidence
+intervals), pooled across three learning rates.}
+\label{fig:app-dawfs-pro-bsr}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/dawfs_bv_toward.png}
+\caption{Bias verbalisation rate (BVR) on HLE under the biased
+prompt, restricted to questions on which adding the bias switched
+the parsed answer toward the biased option, under the DA+WFS
+training regime. OpenAI GPT OSS 20B (top), Meta Llama 3.1 8B
+Instruct (bottom). Training biases are shaded; the rightmost column
+averages over the held-out bias types. Outlined bars are the matched
+controls. Significance markers as in Figure~\ref{fig:app-pro-bsr}.
+Error bars are two binomial standard errors (approximate $95\%$
+confidence intervals), pooled across three learning rates.}
+\label{fig:app-dawfs-bv}
+\end{figure}
 
 \section{Anchor reward}
 \label{app:anchor}
