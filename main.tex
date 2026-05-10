@@ -235,6 +235,8 @@ We train on distractor-argument bias applied to multiple choice questions from t
 distractor-argument and wrong-few-shot biases are detailed in
 Appendix~\ref{app:da-wfs}.
 
+\suggestion{Cleaned-Alpaca todo: \citep{taori2023alpaca,ruebsamen2023alpacacleaned} -- Taori et al.\ for the original Stanford Alpaca, Ruebsamen for the gururise cleanup. Mirrors what BCT (Chua et al.\ 2024) itself cites for this dataset, which the paragraph explicitly follows.}
+
 \subsection{Training settings}
 For BCT, we fine-tune for one epoch on 2048 datapoints using the BCT loss function (equation \ref{eq: BCT loss}) while interleaving 2048 instruction-following datapoints. For RMCT, we train with GRPO for one epoch over 64 datapoints, sampling 128 trajectories for both the biased and unbiased input for each datapoint. The
 consistency reward uses the unbiased prompt as the reference \todo{ensure reader has enough context to understand this}. All training uses LoRA adapters of rank 8. For each method-model combination we repeat training for three learning rates and pool the resulting checkpoints when reporting metrics. Remaining hyperparameters are listed in
@@ -276,11 +278,11 @@ consistency between two copies of the unbiased input rather than
 between the biased and unbiased input for each datapoint. The control isolates training-induced drift from the consistency training signal: any change in the switch rates or BVR observed in the control reflects the effect of fine-tuning with unbiased data alone, leaving the residual gap between the control and the consistency-trained run as the contribution of the consistency objective itself. Control results are reported in
 Appendix~\ref{app:control-results}.
 
-\subsection{Results}
+\section{Results}
 \label{sec:results}
 
 Figure~\ref{fig:main-pro-bsr} reports the towards-bias switch rate
-($\text{BSR}_{\rightarrow}$) on the held-out HLE evaluation set;
+($\text{BSR}_{\rightarrow}$) on the HLE evaluation set;
 Figure~\ref{fig:main-ba} reports the bias verbalisation rate (BVR).
 Results for the DA+WFS training regime, the matched controls, the
 away-from-bias and total switch rates, the verbalised/unverbalised
