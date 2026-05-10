@@ -268,7 +268,7 @@ its questions and away on the other half has $\text{BSR}_{\text{tot}}
 towards-bias switch rate; the away-from-bias and total switch rates
 are reported in Appendix~\ref{app:switch-rates}. 
 
-We also report the \emph{Bias Verbalisation Rate} (BVR) as the proportion of datapoints for which, given the biased question, the model includes any text that would not make sense without the biasing perturbation. The main text reports BVR restricted to the towards-bias-switch subset -- questions on which adding the bias swung the parsed answer to the biased option -- since this is the subset on which the cue was operative; the unconditional BVR is reported in Appendix~\ref{app:ba}. A reduction in BVR after consistency training indicates obfuscation. We discuss this framing of bias verbalisation and obfuscation in section \ref{sec: discussion}.
+We also report the \emph{Bias Verbalisation Rate} (BVR) as the proportion of datapoints for which, given the biased question, the model includes any text that would not make sense without the biasing perturbation. A reduction in BVR after consistency training indicates obfuscation. We discuss this framing of bias verbalisation and obfuscation in section \ref{sec: discussion}.
 
 \subsection{Baselines}
 We compare RMCT against three baselines: the untrained base
@@ -282,11 +282,30 @@ Appendix~\ref{app:control-results}.
 \label{sec:results}
 
 Figure~\ref{fig:main-pro-bsr} reports the towards-bias switch rate
-($\text{BSR}_{\rightarrow}$) on the HLE evaluation set;
-Figure~\ref{fig:main-bv} reports the bias verbalisation rate (BVR) restricted to questions on which adding the bias swung the answer toward the biased option, i.e.\ the subset of questions on which the bias was operative.
-Results for the DA+WFS training regime, the matched controls, the
-away-from-bias and total switch rates, the verbalised/unverbalised
-splits, the unconditional BVR, and accuracy are reported in the appendix.
+($\text{BSR}_{\rightarrow}$) on the evaluation dataset. On the training bias both methods significantly reduce
+$\text{BSR}_{\rightarrow}$ for both models, with BCT reducing it more
+than RMCT on a per-bias basis. The reduction transfers to the
+held-out biases unevenly. On OpenAI GPT OSS 20B, BCT fails to
+generalise: its held-out average is statistically indistinguishable
+from the base rate, driven principally by a sharp increase on
+post-hoc, while RMCT instead reduces the held-out average below base.
+On Meta Llama 3.1 8B Instruct the two methods produce equivalent
+held-out reductions, with BCT and RMCT within standard error of each
+other on every individual held-out bias. Post-hoc behaves anomalously
+under BCT on the reasoning model: $\text{BSR}_{\rightarrow}$ rises
+well above the base rate, in contrast to the small reduction observed
+under RMCT and the lack of any such effect on the non-reasoning
+model. We return to this in Section~\ref{sec: discussion}.
+
+Figure~\ref{fig:main-bv} reports the bias verbalisation rate (BVR) restricted to questions on which adding the bias switched the answer toward the biased option. BCT substantially reduces verbalisation on the trained bias
+and on the held-out average for both models. RMCT, in contrast, does not significantly decrease BVR on any of the held-out biases, and instead significantly increases GPT's BVR on the spurious few-shot squares bias and the held-out average (p<0.01). RMCT does however significantly  (p<0.05) decrease GPT's BVR on the training bias. The same
+qualitative picture holds on the unconditional and bias-switched
+subsets reported in Appendix~\ref{app:ba}.
+
+% make sure the below paragraph is spread throuought the text
+% Results for the DA+WFS training, the matched controls, the
+% away-from-bias and total switch rates, the verbalised/unverbalised
+% splits, the unconditional BVR, and accuracy are reported in the appendix.
 
 \begin{figure}[t]
 \centering
@@ -296,9 +315,8 @@ OpenAI GPT OSS 20B (top), Meta Llama 3.1 8B Instruct (bottom).
 Training bias (distractor argument) is shaded; the rightmost column
 averages over the five held-out bias types. Error bars are two
 binomial standard errors (approximate $95\%$ confidence intervals),
-pooled across three learning rates. Significance markers above each
-bar denote two-proportion z-tests against the base model
-(\textasteriskcentered{} $p<0.05$, \textasteriskcentered\textasteriskcentered{} $p<0.01$, \textasteriskcentered\textasteriskcentered\textasteriskcentered{} $p<0.001$). Matched controls are reported in
+pooled across three learning rates. Significance markers above
+bars denote two-proportion z-tests against the base model. Matched controls are reported in
 Appendix~\ref{app:control-results}.}
 %% Jannes: switch to a single row with the two model panels side by side -- or at least fix the width, since the first x-tick label is currently shrinking the plot.
 \label{fig:main-pro-bsr}
@@ -322,41 +340,9 @@ controls are reported in Appendix~\ref{app:ba}.}
 \label{fig:main-bv}
 \end{figure}
 
-%% Jannes: this paragraph is too detailed -- most of the numbers are readable straight off the plot, trim accordingly.
-\paragraph{Bias following.}
-On the training bias both methods significantly reduce
-$\text{BSR}_{\rightarrow}$ for both models, with BCT reducing it more
-than RMCT on a per-bias basis. The reduction transfers to the
-held-out biases unevenly. On OpenAI GPT OSS 20B, BCT fails to
-generalise: its held-out average is statistically indistinguishable
-from the base rate, driven principally by a sharp increase on
-post-hoc, while RMCT instead reduces the held-out average below base.
-On Meta Llama 3.1 8B Instruct the two methods produce equivalent
-held-out reductions, with BCT and RMCT within standard error of each
-other on every individual held-out bias. Post-hoc behaves anomalously
-under BCT on the reasoning model: $\text{BSR}_{\rightarrow}$ rises
-well above the base rate, in contrast to the small reduction observed
-under RMCT and the lack of any such effect on the non-reasoning
-model. We return to this in Section~\ref{sec: discussion}.
-
-%% Jannes: same -- too detailed, mostly readable off the plot.
-\paragraph{Bias verbalisation.}
-On the towards-bias-switch subset (Figure~\ref{fig:main-bv}) -- the
-questions on which the bias actually swung the model's answer -- the
-two methods diverge on what the chain of thought reveals about the
-cue. BCT substantially suppresses verbalisation on the trained bias
-and on the held-out average for both models: on the OpenAI GPT OSS
-20B held-out average it roughly halves the rate at which the model
-mentions the cue when the cue was operative. RMCT does not show this
-suppression: on OpenAI GPT OSS 20B it stays within standard error of
-base on the held-out average, and on Meta Llama 3.1 8B Instruct it
-slightly raises the held-out-average BVR above base. The same
-qualitative picture holds on the unconditional and bias-switched
-subsets reported in Appendix~\ref{app:ba}.
-
 \section{Discussion} \label{sec: discussion}
 
-\paragraph{Recap.}
+
 %% Jannes: the "without constraining other aspects" framing is a bit too strong -- soften.
 We introduced Rate Matching Consistency Training (RMCT), a
 reinforcement-learning method for selective consistency training that
