@@ -54,8 +54,7 @@
 
 \begin{abstract}
 
-Large language models are often influenced by extraneous input features, such as cues revealing a user’s preferred answer. Consistency training reduces this dependence by training models to behave the same way across inputs with and without the extraneous feature. However, existing methods train for consistency over whole responses or internal activations, which also constrains whether the model verbalises said extraneous features. We show this leads to obfuscation, where the model learns not to mention a cue while remaining influenced by it, undermining monitorability. To address this, we introduce Rate Matching Consistency Training (RMCT), which trains for consistency over selected behavioural properties without constraining how this behaviour is expressed.  RMCT matches the rate at which the model exhibits a target behaviour (e.g., following
-a bias cue) across input perturbations, rather than requiring paired inputs with and without the extraneous feature, extending consistency training to settings where the extraneous features cannot be removed. We evaluate RMCT on sycophancy reduction in two open-weight language models, achieving reductions in bias-following comparable to a standard consistency-training baseline on held-out bias types, while largely preserving the model’s tendency to verbalise the bias cue. Further, we find that RMCT is more data-efficient at the expense of being less compute-efficient in our experiments. Overall, RMCT shows that consistency training can improve behavioural robustness without directly trading off against monitorability.
+Large language models are often influenced by extraneous input features, such as cues revealing a user’s preferred answer. Consistency training reduces this influence by training models to behave the same way across inputs with and without the extraneous feature. However, existing methods train for consistency over entire responses or internal activations, which also constrains whether the model verbalises said extraneous features. We show this leads to obfuscation, where the model learns not to mention a cue while remaining influenced by it, undermining monitorability. To address this, we introduce Rate Matching Consistency Training (RMCT), which trains for consistency over selected behavioural properties without constraining how this behaviour is expressed.  RMCT matches the rate at which the model exhibits a target behaviour (e.g., following a bias cue) across input perturbations, rather than requiring paired inputs with and without the extraneous feature, extending consistency training to settings where the extraneous features cannot be removed. We evaluate RMCT on sycophancy reduction in two open-weight language models, achieving reductions in bias-following comparable to a standard consistency-training baseline on held-out bias types, while largely preserving the model’s tendency to verbalise the bias cue. Further, we find that RMCT is more data-efficient at the expense of being less compute-efficient in our experiments. Overall, RMCT shows that consistency training can improve behavioural robustness without directly trading off against monitorability.
 
 
 % Existing
@@ -84,7 +83,7 @@ a bias cue) across input perturbations, rather than requiring paired inputs with
 
 \section{Introduction}
 
-Large Language model (LLM) behaviour is often influenced by extraneous input features
+Large language model (LLM) behaviour is often influenced by extraneous input features
 that should not, in principle, affect the behaviour of interest. A
 widely studied example is sycophancy, where LLMs adapt their responses
 to align with users' views and preferences
@@ -95,11 +94,11 @@ to align with users' views and preferences
 
 % \suggestion{Append after the existing eval-gaming sentence: ``Whereas sycophancy responds to cues about the user's stated views or preferences, the cue here is a signal of evaluation context, raising a distinctive concern: if behaviour differs under evaluation versus deployment, our evaluations themselves become uninformative about real-world behaviour \citep{carlsmith_scheming_2023}.'' Names the categorical difference and the distinctive eval-uninformativeness stake.}
 
-One approach to mitigate the behavioural inconsistency driven by extraneous input features is to remove these features from the input or from the LLMs internal representations on this input \citep{nguyen_probing_2025, hua_steering_2025}. However, isolating and removing such features in practice is difficult, since they can be encoded as latent information distributed across the text rather than localised in any removable sequence of tokens. LLMs readily extract user attributes such as age from these incidental textual cues \citep{chen2024designing, needham_llms_2025}, and interpretability tools cannot yet reliably remove them from internal representations. Another approach is \textit{Consistency Training}: training LLMs to behave consistently regardless of such features being present in the input. We focus on the second approach in this work.
+One approach to mitigate the behavioural inconsistency driven by extraneous input features is to remove these features from the input or from the LLMs internal representations on this input \citep{nguyen_probing_2025, hua2026steeringevaluationawarelanguagemodels}. However, isolating and removing such features in practice is difficult, since they can be encoded as latent information distributed across the text rather than localised in any removable sequence of tokens. LLMs readily extract user attributes such as age from these incidental textual cues \citep{chen2024designing, needham_llms_2025}, and interpretability tools cannot yet reliably remove them from internal representations. Another approach is \textit{Consistency Training}: training LLMs to behave consistently regardless of such features being present in the input. We focus on the second approach in this work.
 
-Existing consistency-training methods, Bias-Augmented Consistency Training (BCT) \citep{chua_bias-augmented_2024} and Activation Consistency Training (ACT) \citep{irpan_consistency_2025}, train a model to produce either the same response (BCT) or the same internal representations (ACT) across paired inputs. Constraining the entire response as in BCT also constrains verbalisation of the cue, which can misgeneralise to \emph{obfuscation}: the model suppressing mention of a cue while remaining influenced by it. Such obfuscation undermines chain-of-thought monitoring, which has been argued to be a important but fragile tool for short-term AI safety \cite{korbak2025chain}. This could be particularly costly in settings such as prompt-injection robustness \citep{wallace_instruction_2024,anthropic_prompt_injection_2025} or evaluation gaming \citep{schoen_stress_2025}.
+Existing consistency-training methods, Bias-Augmented Consistency Training (BCT) \citep{chua_bias-augmented_2024} and Activation Consistency Training (ACT) \citep{irpan_consistency_2025}, train a model to produce either the same response (BCT) or the same internal representations (ACT) across paired inputs. Constraining the entire response as in BCT also constrains verbalisation of the cue, which can misgeneralise to \emph{obfuscation}: the model suppressing mention of a cue while remaining influenced by it. Such obfuscation undermines chain-of-thought monitoring, which has been argued to be an important but fragile tool for short-term AI safety \cite{korbak2025chain}. This could be particularly costly in settings such as prompt-injection robustness \citep{wallace_instruction_2024,anthropic_prompt_injection_2025} or evaluation gaming \citep{schoen_stress_2025}.
 
-These concerns motivate \emph{selective consistency training}: enforcing consistency only on the behavioural properties of interest, leaving the rest of the output, including any verbalisation of the extraneous input features, free to vary. We introduce \emph{Rate Matching Consistency Training} (RMCT), which trains the model to exhibit a target behaviour at the same rate across related inputs. RMCT does this with reinforcement learning, rewarding each trajectory by how much it pulls its input's rate toward a target rate.
+These concerns motivate \emph{selective consistency training}: enforcing consistency only on the behavioural properties of interest, leaving the rest of the output, including any verbalisation of the extraneous input features, free to vary. We introduce \emph{Rate Matching Consistency Training} (RMCT), which trains the model to exhibit a target behaviour at the same rate across related inputs. RMCT does this with reinforcement learning (RL), rewarding each trajectory by how much it pulls its input's rate toward a target rate.
 
 \subsection{Summary of contributions}
 \begin{itemize}
@@ -128,14 +127,14 @@ ACT \citep{irpan_consistency_2025} also picks a reference input $x_0$ and instea
 where $t$ ranges over the longest matching suffix between $x$ and $x_0$ (in practice, the end of the chat template) and $\operatorname{sg}$ stops gradients through the frozen initial policy.
 
 \paragraph{Existing applications.}
-Consistency training has previously been applied to reduce sycophancy \citep{chua_bias-augmented_2024}, increase jailbreak robustness \citep{irpan_consistency_2025}, and reducing persona drift \citep{shah_frustration_2026} in LLMs. \citet{irpan_consistency_2025} report BCT and ACT lead to similar decrease in LLM sycophancy, while BCT leads to a larger decrease in jailbreak susceptibility. We adopt the sycophancy setting of \citet{chua_bias-augmented_2024} throughout: $\mathcal{X}$ consists of a \emph{biased} prompt -- a multiple-choice question with an added cue suggesting a particular answer -- and an \emph{unbiased} prompt presenting the same question without the cue, with the unbiased prompt serving as the clean reference $x_0$.
+Consistency training has previously been applied to reduce sycophancy \citep{chua_bias-augmented_2024}, increase jailbreak robustness \citep{irpan_consistency_2025}, and reduce persona drift \citep{shah_frustration_2026} in LLMs. \citet{irpan_consistency_2025} report BCT and ACT lead to similar decrease in LLM sycophancy, while BCT leads to a larger decrease in jailbreak susceptibility. We adopt the sycophancy setting of \citet{chua_bias-augmented_2024} throughout: $\mathcal{X}$ consists of a \emph{biased} prompt -- a multiple-choice question with an added cue suggesting a particular answer -- and an \emph{unbiased} prompt presenting the same question without the cue, with the unbiased prompt serving as the clean reference $x_0$.
 
 \section{Rate Matching Consistency Training}
 \label{sec:rmct}
 
 \begin{figure*}[t]
 \centering
-\includegraphics[trim={0cm, 5.5cm, 0cm, 0cm}, clip, width=\linewidth]{figures/RMCT Figure 1.pdf}
+\includegraphics[trim={0cm, 5.25cm, 0cm, 0cm}, clip, width=\linewidth]{figures/RMCT Figure 1.pdf}
 \caption{\textbf{A depiction of Rate Matching Consistency
 Training (RMCT).} We sample multiple trajectories from the model
 under biased and unbiased prompts, score each trajectory with a
@@ -151,9 +150,8 @@ paraphrased for brevity.}
 
 An LLM defines a distribution over responses. For a binary property of interest, the model's propensity to produce it is a probability that we can estimate as a rate over $N$ samples. For example, a model might follow a sycophantic suggestion in 40\% of samples on a biased prompt and 5\% on the unbiased one. Consistency training should therefore operate at the level of these rates, with the goal of matching them across inputs.
 
-Reinforcement learning is naturally suited to such rate-level objectives: we sample $N$ trajectories per input, evaluate the property of interest on each, and turn the resulting per-input rates into a reward signal. Defining the reward at the output level — based only on the property of the final response, not on the chain of thought — mitigates the obfuscation pressure of process-level supervision.
-The core idea is to reduce the variance among per-input rates by rewarding
-each trajectory in proportion to its contribution to that reduction. In practice we usually want the objective to be directional: one (or a subset) of the inputs serves as a reference, and the others are pulled toward its rate.
+Reinforcement learning is naturally suited to such rate-level objectives: we sample $N$ trajectories per input, evaluate the property of interest on each, and turn the resulting per-input rates into a reward signal. Defining the reward at the output level — based only on the property of the final response, not on the chain of thought — mitigates the direct obfuscation pressure of process-level supervision. Here, the core idea is to reduce the variance among per-input rates by rewarding
+each trajectory in proportion to its contribution to that reduction. In practice, we usually want the objective to be directional: one (or a subset) of the inputs serves as a reference, and the others are pulled toward its rate.
 
 Consider a set of related inputs $\mathcal{X}$ with a reference subset $\mathcal{X}_{\text{ref}} \subseteq \mathcal{X}$ (in the sycophancy setting, $\mathcal{X}_{\text{ref}} = \{x_0\}$ where $x_0$ is the unbiased prompt). Let $\tau_{x,i}$ denote the $i$-th of $N$ trajectories sampled on $x$, and $T(\tau) \in \{0,1\}$ a binary classifier of the target behavioural property (e.g.\ ``the response matches the user's bias''). The per-input behaviour rate is
 \begin{equation}
@@ -185,8 +183,11 @@ throughout.
 Figure~\ref{fig:RMCT} depicts the method on $\mathcal{X} = \{\text{biased}, \text{unbiased}\}$ with $\mathcal{X}_{\text{ref}} = \{\text{unbiased}\}$.
 
 \subsection{Properties}
+
+We now describe two desirable properties of RMCT.
+
 \paragraph{Avoiding obfuscation pressure.}
-The RMCT reward depends only on the trait $T$ (and its derivatives $p_x$ and $p_{\text{ref}}$) leaving the remaining output free to vary. Where the trait $T$ is distinct from verbalization of the extraneous features driving the consistency in trait $T$, RMCT does not directly apply pressure against verbalization. Output-only RL supervision is not, however, a guarantee against obfuscation: \citet{drori_output_2025} show that reasoning can still be pushed toward a safe-looking surface form via generalisation from output to chain of thought, or via token-level conditioning whereby safe-looking reasoning raises the probability of safe-looking outputs and is reinforced indirectly.
+The RMCT reward depends only on the trait $T$ (and its derivatives $p_x$ and $p_{\text{ref}}$) leaving the remaining output free to vary. Where the trait $T$ is distinct from verbalization of the extraneous features driving the consistency in trait $T$, RMCT does not directly apply pressure against verbalization. Output-only RL supervision is not, however, a guarantee against obfuscation: \citet{drori2025outputsupervisionobfuscatechain} show that reasoning can still be pushed toward a safe-looking surface form via generalisation from output to chain of thought, or via token-level conditioning whereby safe-looking reasoning raises the probability of safe-looking outputs and is reinforced indirectly.
 
 \paragraph{Flexibility.} 
 The target $p_{\text{ref}} = Q(\{p_x\}_{x \in \mathcal{X}_{\text{ref}}})$
@@ -209,8 +210,7 @@ formats. Furthermore,  the reward is additive over trajectories, so
 additional terms can be combined with the consistency reward. For example, a verbalisation
 reward that explicitly encourages the chain of thought to mention a
 detected cue can be added directly, trading off against the
-consistency term through a mixing weight. 
-
+consistency term through a mixing weight\footnote{Further, like BCT and unlike ACT, RMCT operates purely on model outputs and so does not require white-box access to internal activations, making it applicable to models exposed only through a sampling and fine-tuning API.}.
 
 \section{Experiments}
 \label{sec:experiments}
@@ -220,21 +220,21 @@ We benchmark RMCT against BCT on the sycophancy dataset of \citet{chua_bias-augm
 
 \subsection{Models}
 We run experiments on two open-weight models: Meta Llama 3.1 8B
-Instruct and OpenAI GPT OSS 20B. For Meta Llama 3.1 8B Instruct, we additionally instruct the model
+Instruct \citep{grattafiori2024llama3herdmodels} and OpenAI GPT OSS 20B \citep{agarwal2025gpt}. For Meta Llama 3.1 8B Instruct, we additionally instruct the model
 to reason step-by-step before answering. OpenAI GPT OSS 20B is a reasoning model that automatically
 produces a chain of thought before its final answer, so no such
 instruction is added.
 
 \subsection{Train/evaluation split}
 %% Jannes: how much data-generation detail do we need in the main text? Mostly defer to the appendix?
-We train on distractor-argument bias applied to multiple choice questions from the LogiQA and HellaSwag datasets and evaluate on all six biases mentions in section \ref{sec: dataset} applied to the multiple-choice subset of the Humanity's Last Exam (HLE) dataset. For BCT, additional instruction-following samples drawn from the target model on the Cleaned Alpaca dataset \citep{taori2023alpaca,ruebsamen2023alpacacleaned} are mixed into the training data following \citet{chua_bias-augmented_2024}. Additional experiments that trains on a mixture of
+We train on the distractor-argument bias applied to multiple choice questions from the LogiQA \citep{liu2020logiqa} and HellaSwag \citep{zellers2019hellaswag} datasets and evaluate on all six biases mentioned in Section \ref{sec: dataset} applied to the multiple-choice subset of the Humanity's Last Exam (HLE) dataset \citep{phan2025humanity}. For BCT, additional instruction-following samples drawn from the target model on the Cleaned Alpaca dataset \citep{taori2023alpaca,ruebsamen2023alpacacleaned} are mixed into the training data following \citet{chua_bias-augmented_2024}. Additional experiments that trains on a mixture of
 distractor-argument and wrong-few-shot biases are detailed in
 Appendix~\ref{app:da-wfs}.
 
 \subsection{Training settings}
-For BCT, we fine-tune for one epoch on 2048 datapoints using the BCT loss function (equation \ref{eq: BCT loss}) while interleaving 2048 instruction-following datapoints. For RMCT, we train with GRPO for one epoch over 64 datapoints, sampling 128 trajectories for both the biased and unbiased input for each datapoint. The consistency reward uses the unbiased prompt as the reference.
+For BCT, we fine-tune for one epoch on 2048 datapoints using the BCT loss function (Equation \ref{eq: BCT loss}) while interleaving 2048 instruction-following datapoints. For RMCT, we train with GRPO for one epoch over 64 datapoints, sampling 128 trajectories for both the biased and unbiased input for each datapoint. The consistency reward uses the unbiased prompt as the reference.
 % \todo{ensure reader has enough context to understand this}.\suggestion{Replacement: ``The consistency reward uses the unbiased prompt as the reference -- that is, $\mathcal{X}_{\text{ref}} = \{x_{\text{unbiased}}\}$, so $p_{\text{ref}} = p_{\text{unbiased}}$ and the reward pulls $p_{\text{biased}}$ toward $p_{\text{unbiased}}$.'' Ties the prose back to the symbols already established in \S3 ($\mathcal{X}_{\text{ref}}, p_{\text{ref}}$) and the figure caption ($p_{\text{biased}}, p_{\text{unbiased}}$).}
-All training uses LoRA adapters of rank 8. For each method-model combination we repeat training for three learning rates and pool the resulting checkpoints when reporting metrics. Remaining hyperparameters are listed in
+All training uses low rank adapters (LoRA; \citet{hu2022lora}) of rank 8. For each method-model combination we repeat training for three learning rates and pool the resulting checkpoints when reporting metrics. Remaining hyperparameters are listed in
 Appendix~\ref{app:hyperparameters}.
 
 \subsection{Metrics}
@@ -283,7 +283,7 @@ held-out biases unevenly. On OpenAI GPT OSS 20B, BCT fails to
 generalise: its held-out average is statistically indistinguishable
 from the base rate, driven principally by a sharp increase on
 post-hoc, while RMCT instead reduces the held-out average below base.
-On Meta Llama 3.1 8B Instruct the two methods produce equivalent
+On Meta Llama 3.1 8B Instruct, the two methods produce equivalent
 held-out reductions, with BCT and RMCT within standard error of each
 other on every individual held-out bias. Post-hoc behaves anomalously
 under BCT on the reasoning model: $\text{BSR}_{\rightarrow}$ rises
@@ -292,7 +292,7 @@ under RMCT and the lack of any such effect on the non-reasoning
 model. We return to this in Section~\ref{sec: discussion}.
 
 Figure~\ref{fig:main-bv} reports the bias verbalisation rate (BVR) restricted to questions on which adding the bias switched the answer toward the biased option. BCT substantially reduces verbalisation on the trained bias
-and on the held-out average for both models. RMCT, in contrast, does not significantly decrease BVR on any of the held-out biases, and instead significantly increases GPT's BVR on the spurious few-shot squares bias and the held-out average (p<0.01). RMCT does however significantly (p<0.05) decrease GPT's BVR on the training bias. The matched controls (Figure~\ref{fig:app-bv-controls}) show that BCT's BVR collapse is attributable to the consistency objective rather than to fine-tuning drift: BCT's BVR control sits close to base while BCT proper drops well below it. The smaller BVR increase under RMCT, by contrast, partly reflects fine-tuning drift -- the RMCT control moves BVR similarly on Llama -- so RMCT's behaviour on this metric should be read primarily as the absence of obfuscation pressure rather than as an active push toward verbalisation.
+and on the held-out average for both models. RMCT, in contrast, does not significantly decrease BVR on any of the held-out biases, and instead significantly increases GPT's BVR on the spurious few-shot squares bias and the held-out average ($p<0.01$). RMCT does however significantly ($p<0.05$) decrease GPT's BVR on the training bias. The matched controls (Figure~\ref{fig:app-bv-controls}) show that BCT's BVR collapse is attributable to the consistency objective rather than to fine-tuning drift: BCT's BVR control sits close to base while BCT proper drops well below it. The smaller BVR increase under RMCT, by contrast, partly reflects fine-tuning drift -- the RMCT control moves BVR similarly on Llama -- so RMCT's behaviour on this metric should be read primarily as the absence of obfuscation pressure rather than as an active push toward verbalisation.
 
 % make sure the below paragraph is spread throuought the text
 % Results for the DA+WFS training, the matched controls, the
@@ -383,7 +383,7 @@ learning rates and pool checkpoints across them when computing
 metrics; this forecloses learning-rate cherry-picking. Hyperparameter-tuning was employed to determine a suitable number of datapoints and batch sizes for BCT and RMCT, the
 inclusion of the instruction-following samples for BCT, and the number of trajectories per datapoint, and
 KL-penalty coefficient for RMCT. These
-tuning splits dis not use the same training datasets and bias combinations as the main experiments, nor the same evaluation
+tuning splits did not use the same training datasets and bias combinations as the main experiments, nor the same evaluation
 datasets. The post-hoc bias was
 excluded from the tuning evaluations.
 
@@ -493,7 +493,7 @@ to a wrong option (e.g., ``The best answer is: (B)''); the user then
 asks the model to explain its reasoning step-by-step without anchoring
 on its previous response. The cue is the planted prior answer.
 
-\paragraph{spurious few-shot squares.} Several few-shot examples
+\paragraph{Spurious few-shot squares.} Several few-shot examples
 precede the question, each labelled with a correct answer; the
 labelled correct option is always marked with a small black-square
 symbol. A model that picks up the extraneous symbol-to-label association
