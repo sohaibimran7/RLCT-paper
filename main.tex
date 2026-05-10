@@ -265,7 +265,7 @@ the directional signal: a model that switches toward the bias on half
 its questions and away on the other half has $\text{BSR}_{\text{tot}}
 = 1$ but a marginal-rate difference of $0$. The main text reports only the
 towards-bias switch rate; the away-from-bias and total switch rates
-are reported in Figures~\ref{fig:app-anti-bsr} and \ref{fig:app-total-bsr}.
+are reported in Appendix~\ref{app:switch-rates}.
 
 We also report the \emph{Bias Verbalisation Rate} (BVR) as the proportion of datapoints for which, given the biased question, the model includes any text that would not make sense without the biasing perturbation. We restrict BVR to the \emph{towards-bias-switch subset} -- questions on which adding the bias swung the parsed answer to the biased option, i.e.\ where $b(x) - u(x) = 1$ -- since these are the questions on which the cue was operative. A reduction in BVR on this subset after consistency training indicates obfuscation. We discuss this framing of bias verbalisation and obfuscation in section \ref{sec: discussion}.
 
@@ -314,7 +314,7 @@ averages over the five held-out bias types. Error bars are two
 binomial standard errors (approximate $95\%$ confidence intervals),
 pooled across three learning rates. Significance markers above
 bars denote two-proportion z-tests against the base model. Matched controls are reported in
-Figure~\ref{fig:app-pro-bsr}.}
+Appendix~\ref{app:control-results}.}
 %% Jannes: switch to a single row with the two model panels side by side -- or at least fix the width, since the first x-tick label is currently shrinking the plot.
 \label{fig:main-pro-bsr}
 \end{figure}
@@ -331,7 +331,7 @@ rightmost column averages over the five held-out bias types. Error
 bars are two binomial standard errors (approximate $95\%$ confidence
 intervals), pooled across three learning rates. Significance markers
 as in Figure~\ref{fig:main-pro-bsr}. Matched controls are reported in
-Figure~\ref{fig:app-bv-controls}.}
+Appendix~\ref{app:control-results}.}
 %% Jannes: switch to a single row with the two model panels side by side -- or at least fix the width, since the first x-tick label is currently shrinking the plot.
 %% Jannes: highlight the percentage differences in the plot (e.g. annotate "+50" or arrows between bars) so they're easier to parse.
 \label{fig:main-bv}
@@ -588,7 +588,7 @@ confidence intervals), pooled across three learning rates.}
 This appendix reports the away-from-bias and total per-question
 switch rates on the DA-only training regime, complementing the
 towards-bias rate in the main text. Results for the DA+WFS training
-regime are reported in Figures~\ref{fig:app-dawfs-pro-bsr} and \ref{fig:app-dawfs-bv}.
+regime are reported in Appendix~\ref{app:da-wfs}.
 
 Figure~\ref{fig:app-pro-bsr} reproduces the main-text
 $\text{BSR}_{\rightarrow}$ plot with the matched controls overlaid;
