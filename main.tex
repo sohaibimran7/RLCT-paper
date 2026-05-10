@@ -28,7 +28,7 @@
 \begin{document}
 
 \twocolumn[
-\icmltitle{Rate Matching Consistency Training: Training for Consistency while Mitigating Obfuscation}
+\icmltitle{Consistency Training while Mitigating Obfuscation via Rate Matching}
 
 % Keep real authors here; ICML style anonymizes them unless [accepted] is used.
 \begin{icmlauthorlist}
@@ -54,7 +54,7 @@
 
 \begin{abstract}
 
-Large language models are often influenced by extraneous input features, such as cues revealing a user’s preferred answer. Consistency training reduces this dependence by training models to behave the same way across inputs with and without the extraneous feature. However, existing methods train for consistency over whole responses or internal activations, which also constrains whether the model verbalises said extraneous features. We show this leads to obfuscation, where the model learns not to mention a cue while remaining influenced by it, undermining monitorability. To address this, we introduce Rate Matching Consistency Training (RMCT), which trains for consistency over selected behavioural properties without constraining how this behaviour is expressed.  RLCT matches the rate at which the model exhibits a target behaviour (e.g., following
+Large language models are often influenced by extraneous input features, such as cues revealing a user’s preferred answer. Consistency training reduces this dependence by training models to behave the same way across inputs with and without the extraneous feature. However, existing methods train for consistency over whole responses or internal activations, which also constrains whether the model verbalises said extraneous features. We show this leads to obfuscation, where the model learns not to mention a cue while remaining influenced by it, undermining monitorability. To address this, we introduce Rate Matching Consistency Training (RMCT), which trains for consistency over selected behavioural properties without constraining how this behaviour is expressed.  RMCT matches the rate at which the model exhibits a target behaviour (e.g., following
 a bias cue) across input perturbations, rather than requiring paired inputs with and without the extraneous feature, extending consistency training to settings where the extraneous features cannot be removed. We evaluate RMCT on sycophancy reduction in two open-weight language models, achieving reductions in bias-following comparable to a standard consistency-training baseline on held-out bias types, while largely preserving the model’s tendency to verbalise the bias cue. Further, we find that RMCT is more data-efficient at the expense of being less compute-efficient in our experiments. Overall, RMCT shows that consistency training can improve behavioural robustness without directly trading off against monitorability.
 
 
@@ -188,21 +188,7 @@ Figure~\ref{fig:RMCT} depicts the method on $\mathcal{X} = \{\text{biased}, \tex
 \paragraph{Avoiding obfuscation pressure.}
 The RMCT reward depends only on the trait $T$ (and its derivatives $p_x$ and $p_{\text{ref}}$) leaving the remaining output free to vary. Where the trait $T$ is distinct from verbalization of the extraneous features driving the consistency in trait $T$, RMCT does not directly apply pressure against verbalization. Output-only RL supervision is not, however, a guarantee against obfuscation: \citet{drori_output_2025} show that reasoning can still be pushed toward a safe-looking surface form via generalisation from output to chain of thought, or via token-level conditioning whereby safe-looking reasoning raises the probability of safe-looking outputs and is reinforced indirectly.
 
-\paragraph{Flexibility.} The reward is additive over trajectories, so
-additional terms can be combined with the consistency reward without
-changing the optimisation procedure. For example, a verbalisation
-reward that explicitly encourages the chain of thought to mention a
-detected cue can be added directly, trading off against the
-consistency term through a mixing weight.
-
-\paragraph{Output variation.} The same construction applies when
-$\mathcal{X}$ varies the output rather than the input -- for
-example, enforcing consistency across reasoning languages or
-formats. Whether obfuscation pressure is genuinely absent in this
-regime requires separate study, since varying the output
-constrains the chain of thought directly.
-
-\paragraph{Flexible reference structure.}
+\paragraph{Flexibility.} 
 The target $p_{\text{ref}} = Q(\{p_x\}_{x \in \mathcal{X}_{\text{ref}}})$
 is determined by two choices: a reference subset
 $\mathcal{X}_{\text{ref}} \subseteq \mathcal{X}$ and an aggregation
@@ -216,6 +202,15 @@ is pulled toward: $Q = \text{mean}$ pulls toward the average reference
 rate, $Q = \min$ toward the lowest, and so on. This permits training
 over arbitrary sets of related inputs, including more than two and
 including settings where no clean reference is available.
+The same construction applies when
+$\mathcal{X}$ varies the output rather than the input; for
+example, enforcing consistency across reasoning languages or
+formats. Furthermore,  the reward is additive over trajectories, so
+additional terms can be combined with the consistency reward. For example, a verbalisation
+reward that explicitly encourages the chain of thought to mention a
+detected cue can be added directly, trading off against the
+consistency term through a mixing weight. 
+
 
 \section{Experiments}
 \label{sec:experiments}
