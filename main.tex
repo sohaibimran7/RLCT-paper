@@ -117,18 +117,18 @@ Consistency training is a class of methods that train an LLM policy $\pi_\theta$
 \paragraph{Bias-Augmented Consistency Training.}
 BCT \citep{chua_bias-augmented_2024} considers one input $x_0 \in \mathcal{X}$ as a reference (typically a clean prompt), samples a target response $\tau \sim \pi_{\theta_0}(\cdot \mid x_0)$ from the initial policy on this reference, and fine-tunes $\pi_\theta$ to produce $\tau$ on the remaining inputs $\mathcal{X} \setminus \{x_0\}$:
 \begin{equation}
-\mathcal{L}_{\text{BCT}}(\theta) = -\sum_{x \in \mathcal{X} \setminus \{x_0\}} \log \pi_\theta(\tau \mid x).
+\mathcal{L}_{\text{BCT}}(\theta) = -\sum_{x \in \mathcal{X} \setminus \{x_0\}} \log \pi_\theta(\tau \mid x)
 \end{equation}
 
 \paragraph{Activation Consistency Training.}
 ACT \citep{irpan_consistency_2025} also picks a reference input $x_0$ and instead matches residual-stream activations on the remaining inputs $\mathcal{X} \setminus \{x_0\}$ to those on the reference $x_0$. Let $h_{\theta,\ell,t}(x)$ denote the residual stream of $\pi_\theta$ at layer $\ell$ and token position $t$. ACT minimises
 \begin{equation}
-\mathcal{L}_{\text{ACT}}(\theta) = \sum_{x \in \mathcal{X} \setminus \{x_0\}} \mathbb{E}_{\ell,\, t}\Bigl[\bigl\| h_{\theta,\ell,t}(x) - \operatorname{sg}\bigl(h_{\theta_0,\ell,t}(x_0)\bigr) \bigr\|^2\Bigr],
+\mathcal{L}_{\text{ACT}}(\theta) = \sum_{x \in \mathcal{X} \setminus \{x_0\}} \mathbb{E}_{\ell,\, t}\Bigl[\bigl\| h_{\theta,\ell,t}(x) - \operatorname{sg}\bigl(h_{\theta_0,\ell,t}(x_0)\bigr) \bigr\|^2\Bigr]
 \end{equation}
 where $t$ ranges over the longest matching suffix between $x$ and $x_0$ (in practice, the end of the chat template) and $\operatorname{sg}$ stops gradients through the frozen initial policy.
 
 \paragraph{Existing applications.}
-Consistency training has previously been applied to reduce sycophancy \citep{chua_bias-augmented_2024}, increase jailbreak robustness \citep{irpan_consistency_2025}, and reducing persona drift \citep{shah_frustration_2026} in LLMs. \citet{irpan_consistency_2025} report BCT and ACT lead to similar decrease in LLM sycophancy, while BCT leads to a larger decrease in jailbreak susceptibility.
+Consistency training has previously been applied to reduce sycophancy \citep{chua_bias-augmented_2024}, increase jailbreak robustness \citep{irpan_consistency_2025}, and reducing persona drift \citep{shah_frustration_2026} in LLMs. \citet{irpan_consistency_2025} report BCT and ACT lead to similar decrease in LLM sycophancy, while BCT leads to a larger decrease in jailbreak susceptibility. We adopt the sycophancy setting of \citet{chua_bias-augmented_2024} throughout: $\mathcal{X}$ consists of a \emph{biased} prompt -- a multiple-choice question with an added cue suggesting a particular answer -- and an \emph{unbiased} prompt presenting the same question without the cue, with the unbiased prompt serving as the clean reference $x_0$.
 
 \section{Rate Matching Consistency Training}
 
@@ -156,19 +156,19 @@ each trajectory in proportion to its contribution to that reduction. In practice
 
 Consider a set of related inputs $\mathcal{X}$ with a reference subset $\mathcal{X}_{\text{ref}} \subseteq \mathcal{X}$ (in the sycophancy setting, $\mathcal{X}_{\text{ref}} = \{x_0\}$ where $x_0$ is the unbiased prompt). Let $\tau_{x,i}$ denote the $i$-th of $N$ trajectories sampled on $x$, and $T(\tau) \in \{0,1\}$ a binary classifier of the target behavioural property (e.g.\ ``the response matches the user's bias''). The per-input behaviour rate is
 \begin{equation}
-p_x = \frac{1}{N} \sum_{i=1}^{N} T(\tau_{x,i}),
+p_x = \frac{1}{N} \sum_{i=1}^{N} T(\tau_{x,i})
 \end{equation}
 and the target rate is obtained by aggregating the reference rates with an aggregation function $Q$ (for example, the mean or the minimum):
 \begin{equation}
-p_{\text{ref}} = Q\bigl(\{p_x\}_{x \in \mathcal{X}_{\text{ref}}}\bigr).
+p_{\text{ref}} = Q\bigl(\{p_x\}_{x \in \mathcal{X}_{\text{ref}}}\bigr)
 \end{equation}
 
 Each non-reference trajectory receives a consistency reward equal to its
 contribution to pulling its local rate $p_x$ toward the target rate
 $p_{\text{ref}}$:
 \begin{equation}
-r^{\text{cons}}_{x,i} = -(p_x - p_{\text{ref}})\,(T(\tau_{x,i}) - p_x),
-\qquad x \in \mathcal{X} \setminus \mathcal{X}_{\text{ref}}.
+r^{\text{cons}}_{x,i} = -(p_x - p_{\text{ref}})\,(T(\tau_{x,i}) - p_x)
+\qquad x \in \mathcal{X} \setminus \mathcal{X}_{\text{ref}}
 \end{equation}
 An optional anchor reward to prevent the reference rates from drifting
 during training is described in Appendix~\ref{app:anchor}; all experiments
@@ -194,6 +194,13 @@ reward that explicitly encourages the chain of thought to mention a
 detected cue can be added directly, trading off against the
 consistency term through a mixing weight.
 
+\paragraph{Output variation.} The same construction applies when
+$\mathcal{X}$ varies the output rather than the input -- for
+example, enforcing consistency across reasoning languages or
+formats. Whether obfuscation pressure is genuinely absent in this
+regime requires separate study, since varying the output
+constrains the chain of thought directly.
+
 \paragraph{Flexible reference structure.}
 The target $p_{\text{ref}} = Q(\{p_x\}_{x \in \mathcal{X}_{\text{ref}}})$
 is determined by two choices: a reference subset
@@ -206,14 +213,8 @@ recovers a symmetric objective that pulls all rates toward a common
 target. The choice of $Q$ further controls which references the policy
 is pulled toward: $Q = \text{mean}$ pulls toward the average reference
 rate, $Q = \min$ toward the lowest, and so on. This permits training
-over arbitrary sets of perturbations, including more than two and
+over arbitrary sets of related inputs, including more than two and
 including settings where no clean reference is available.
-
-\paragraph{Output perturbations.} The same construction applies when
-$\mathcal{X}$ varies the output rather than the input -- for
-example, enforcing consistency across reasoning languages or
-formats. Whether obfuscation pressure is absent in this
-regime requires separate study. 
 
 \section{Experiments}
 \label{sec:experiments}
@@ -1012,8 +1013,8 @@ rate $p_x$ ($x \in \mathcal{X}_{\text{ref}}$) to its initial value $p^{(0)}_x$
 computed under the initial policy $\pi_{\theta_0}$ (a checkpoint taken before
 consistency training begins):
 \begin{equation}
-r^{\text{anchor}}_{x,i} = -(p_x - p^{(0)}_x)\,(T(\tau_{x,i}) - p_x),
-\qquad x \in \mathcal{X}_{\text{ref}}.
+r^{\text{anchor}}_{x,i} = -(p_x - p^{(0)}_x)\,(T(\tau_{x,i}) - p_x)
+\qquad x \in \mathcal{X}_{\text{ref}}
 \end{equation}
 The baseline $p_x$ is the variance-optimal centring under the current
 sampling distribution; $p^{(0)}_x$ comes from a frozen policy and
@@ -1027,10 +1028,10 @@ combined by a mixing weight $\alpha$:
 \begin{equation}
 r_{x,i} =
 \begin{cases}
-(1-\alpha)\, r^{\text{cons}}_{x,i} & x \in \mathcal{X} \setminus \mathcal{X}_{\text{ref}}, \\
-\alpha\, r^{\text{anchor}}_{x,i} & x \in \mathcal{X}_{\text{ref}}.
+(1-\alpha)\, r^{\text{cons}}_{x,i} & x \in \mathcal{X} \setminus \mathcal{X}_{\text{ref}} \\
+\alpha\, r^{\text{anchor}}_{x,i} & x \in \mathcal{X}_{\text{ref}}
 \end{cases}
 \end{equation}
-All experiments in this paper use $\alpha = 0$.
+All experiments in this paper use $\alpha = 0$ (the consistency reward alone). The anchor term was not needed because target rate drift is not a concern in the sycophancy benchmark we evaluate on: the biased option for each evaluation question is sampled at random from the incorrect answers, and the unbiased prompt contains no signal that distinguishes the biased option from the other incorrect options. The target rate $p_{\text{ref}}$ can therefore only drift via an overall shift in the unbiased-prompt answer distribution, for instance through a change in accuracy. Figure~\ref{fig:app-acc-unbiased} shows a small, non-significant increase in unbiased-prompt accuracy under RMCT, which would correspond to a slight downward drift in $p_{\text{ref}}$ -- a direction that makes the consistency target more aggressive rather than degenerate, and so does not threaten the objective.
 
 \end{document}
