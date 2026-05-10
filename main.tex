@@ -239,7 +239,7 @@ Appendix~\ref{app:da-wfs}.
 
 \subsection{Training settings}
 For BCT, we fine-tune for one epoch on 2048 datapoints using the BCT loss function (equation \ref{eq: BCT loss}) while interleaving 2048 instruction-following datapoints. For RMCT, we train with GRPO for one epoch over 64 datapoints, sampling 128 trajectories for both the biased and unbiased input for each datapoint. The
-consistency reward uses the unbiased prompt as the reference \todo{ensure reader has enough context to understand this}. All training uses LoRA adapters of rank 8. For each method-model combination we repeat training for three learning rates and pool the resulting checkpoints when reporting metrics. Remaining hyperparameters are listed in
+consistency reward uses the unbiased prompt as the reference \todo{ensure reader has enough context to understand this}.\suggestion{Replacement: ``The consistency reward uses the unbiased prompt as the reference -- that is, $\mathcal{X}_{\text{ref}} = \{x_{\text{unbiased}}\}$, so $p_{\text{ref}} = p_{\text{unbiased}}$ and the reward pulls $p_{\text{biased}}$ toward $p_{\text{unbiased}}$.'' Ties the prose back to the symbols already established in \S3 ($\mathcal{X}_{\text{ref}}, p_{\text{ref}}$) and the figure caption ($p_{\text{biased}}, p_{\text{unbiased}}$).} All training uses LoRA adapters of rank 8. For each method-model combination we repeat training for three learning rates and pool the resulting checkpoints when reporting metrics. Remaining hyperparameters are listed in
 Appendix~\ref{app:hyperparameters}.
 
 \subsection{Metrics}
