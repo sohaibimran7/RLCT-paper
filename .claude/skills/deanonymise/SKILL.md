@@ -141,15 +141,18 @@ Find the line `\bibliography{references, ai_safety}` and insert these sections i
 We thank Tim Hua for inspiring this project and Igor Ivanov for
 project management. We also thank Jordan Taylor, James Chua, Daniel Tan,
 and Jasmine Li for helpful discussions that improved this paper. We
-are grateful to Coefficient Giving for funding SI and for providing
+thank the London Initiative for Safe AI for hosting SI and JE and
+enabling this collaboration, the Supervised Program for Alignment
+Research for facilitating PG's collaboration with DA and SI, and Far Labs for hosting SI. We are
+grateful to Coefficient Giving for funding SI and for providing
 compute, and to the UK AI Security Institute for providing additional
 compute for this research.
 
 \section*{Author contributions}
 JE and SI conceptualised the method. SI implemented and ran the
-majority of the experiments. SI and PG wrote the paper. PG implemented
-the multi-turn biases and conducted hyperparameter tuning. DA
-supervised the project.
+majority of the experiments. PG implemented the multi-turn biases and
+conducted hyperparameter tuning. DA supervised the project. All
+authors contributed to writing the paper.
 
 \bibliography{references, ai_safety}
 ```
