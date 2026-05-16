@@ -102,7 +102,7 @@ to align with users' views and preferences
 \caption{\textbf{Overview of Rate Matching Consistency
 Training (RMCT).} We sample multiple trajectories from the model
 under biased and unbiased prompts, score each trajectory with a
-binary classifier ($T$), and compute per-prompt behaviour
+binary classifier ($T(x, y)$), and compute per-prompt behaviour
 rates. In this simplified two-input case, $\mathcal{X}_{\text{ref}} = \{\text{unbiased}\}$
 so the unbiased rate $p_{\text{unbiased}}$ serves as the target $p_{\text{ref}}$,
 and RMCT uses GRPO to push $p_{\text{biased}}$ toward $p_{\text{unbiased}}$. Because the reward
