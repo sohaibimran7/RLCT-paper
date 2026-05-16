@@ -234,31 +234,97 @@
   .col-c {
     display: flex;
     flex-direction: column;
-    margin-left: 24px;
+    align-items: flex-start;
+    margin-left: 40px;
   }
+  .col-c > header { align-self: stretch; }
   .obj-wrap {
     margin-top: 28px;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 28px;
+    align-items: flex-start;
+    gap: 18px;
   }
+  .rates-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .rates-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 6px;
+    white-space: nowrap;
+  }
+  .intuition-header {
+    font-size: 14px;
+    font-weight: 600;
+    font-style: italic;
+    color: var(--ink-soft);
+    margin-bottom: 4px;
+    text-align: left;
+    line-height: 1.3;
+  }
+  .compute-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .reward-eq .op-sep { font-style: normal; margin: 0 8px; }
+  .op-upright { font-style: normal; }
+  .pbar {
+    display: inline-block;
+    position: relative;
+    padding-top: 1px;
+  }
+  .pbar::before {
+    content: '';
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    right: 1px;
+    height: 1px;
+    background: currentColor;
+  }
+  .rates-stack {
+    display: flex;
+    flex-direction: row;
+    border: 1.2px solid var(--ink);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--bg);
+  }
+  .rate-slot {
+    padding: 6px 14px;
+    text-align: center;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-style: italic;
+    font-size: 14px;
+    border-right: 1px solid var(--rule-soft);
+    min-width: 80px;
+  }
+  .rate-slot:last-child { border-right: none; }
+  .rate-slot sub { font-style: normal; font-size: 0.72em; }
+  .rate-slot[data-rate="biased"]   { color: var(--biased); }
+  .rate-slot[data-rate="unbiased"] { color: var(--unbiased); }
+  .rate-slot.more { color: var(--ink-faint); font-size: 13px; padding: 4px 10px; }
   .rate-box {
-    width: 200px;
+    width: 140px;
     border: 1.5px solid;
-    border-radius: 8px;
-    padding: 10px 12px;
+    border-radius: 7px;
+    padding: 7px 10px;
     text-align: center;
     background: var(--bg);
   }
   .rate-box .label {
-    font-size: 17px;
+    font-size: 14px;
     font-weight: 500;
     letter-spacing: -0.01em;
   }
   .rate-box .value {
     margin-top: 2px;
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 600;
     letter-spacing: -0.01em;
     line-height: 1.05;
@@ -273,7 +339,7 @@
   }
 
   .reward-eq {
-    text-align: center;
+    text-align: left;
     font-size: 16px;
     line-height: 1.5;
     color: var(--ink);
@@ -284,10 +350,12 @@
     font-size: 15px;
   }
   .reward-eq .caption {
-    margin-top: 8px;
-    font-size: 14px;
+    margin-top: 6px;
+    font-size: 13px;
     color: var(--ink-soft);
     font-style: italic;
+    padding-left: 14px;
+    text-indent: -14px;
   }
   .reward-eq .caption sub { font-style: normal; font-size: 0.72em; }
   .reward-eq .intuition {
@@ -299,11 +367,83 @@
   .reward-eq .formula {
     font-family: 'Georgia', 'Times New Roman', serif;
     font-style: italic;
-    font-size: 17px;
+    font-size: 15px;
     white-space: nowrap;
   }
+  .reward-eq { margin-top: 14px; }
+  .reward-eq .formula.derived { margin-top: 2px; }
+  .reward-eq .setup {
+    margin-top: 4px;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-style: italic;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .reward-eq .setup sub { font-style: normal; font-size: 0.72em; }
+  .reward-eq .subtitle {
+    margin-top: 6px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    font-style: normal;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    white-space: nowrap;
+  }
+  .reward-eq .subtitle i,
+  .reward-eq .subtitle em { font-style: italic; }
+  .reward-eq .subtitle b,
+  .reward-eq .subtitle strong { font-weight: 700; color: var(--ink); }
+  .reward-eq .subtitle sub { font-style: normal; font-size: 0.72em; }
+  .reward-eq .where-line {
+    margin-top: 2px;
+    margin-left: 24px;
+    font-style: italic;
+    color: var(--ink-soft);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 12.5px;
+    white-space: nowrap;
+  }
+  .reward-eq .where-line sub { font-style: normal; font-size: 0.72em; }
+  .reward-eq .setup .eq-var[data-var="biased"] { color: var(--biased); }
+  .reward-eq .setup .eq-var[data-var="unbiased"] { color: var(--unbiased); }
   .reward-eq .formula .op { font-style: normal; padding: 0 1px; }
   .reward-eq .formula sub { font-style: normal; font-size: 0.72em; }
+  .case-table {
+    margin: 10px auto 0;
+    display: grid;
+    grid-template-columns: auto auto auto;
+    border-collapse: collapse;
+    font-size: 12px;
+    color: var(--ink);
+  }
+  .reward-eq .footnote {
+    margin-top: 4px;
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    font-style: italic;
+  }
+  .reward-eq .footnote sub { font-style: normal; font-size: 0.72em; }
+  .case-table .cell.note { color: var(--ink-soft); font-style: italic; font-family: inherit; padding-left: 6px; }
+  .case-table .cell {
+    padding: 4px 10px;
+    border-bottom: 1px solid var(--rule-soft);
+    text-align: center;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-style: italic;
+  }
+  .case-table .cell sub { font-style: normal; font-size: 0.72em; }
+  .case-table .cell.head {
+    font-weight: 600;
+    font-style: normal;
+    font-family: inherit;
+    color: var(--ink-soft);
+    background: transparent;
+  }
+  .case-table .cell.head-row { border-bottom: 1.5px solid var(--rule-soft); }
+  .case-table .cell.head-col { text-align: right; padding-right: 12px; }
+  .case-table .cell.pos { color: var(--unbiased); }
+  .case-table .cell.neg { color: var(--biased); }
+  .case-table .cell.last { border-bottom: none; }
   .reward-eq .eq-var { padding: 0 1px; }
   .reward-eq .eq-var[data-var="biased"]   { color: var(--biased); }
   .reward-eq .eq-var[data-var="unbiased"] { color: var(--unbiased); }
@@ -500,14 +640,41 @@
     </header>
 
     <div class="obj-wrap">
-      <div class="rate-box rate-box--biased">
-        <div class="label"><i>p<span class="sub">biased</span></i></div>
-        <div class="value">2&frasl;3</div>
+      <div class="intuition-header">Matching rates &rarr; minimize rate variance</div>
+
+      <div class="rates-container">
+        <div class="rates-title">a. Collect per-prompt rates <i>p<sub>x</sub></i></div>
+        <div class="rates-stack">
+          <div class="rate-slot" data-rate="biased"><i>p<sub>biased</sub></i></div>
+          <div class="rate-slot" data-rate="unbiased"><i>p<sub>unbiased</sub></i></div>
+          <div class="rate-slot more">&hellip;</div>
+        </div>
       </div>
 
       <div class="reward-eq">
-        <div class="title">Reward, for each rollout <i>&tau;</i></div>
+        <div class="rates-title" style="margin-top: 6px">b. Compute mean &#120124;[<i>p<sub>x</sub></i>]</div>
+        <div class="caption">&rarr; Goal: minimize variance <i>V</i> = <span class="op-upright">Var</span>[<i>p<sub>x</sub></i>]</div>
+      </div>
+
+      <div class="reward-eq" style="margin-top: 0px">
+        <div class="rates-title" style="margin-top: 0px">c. Reward for rollout <i>&tau;</i> on input <i>x</i>:</div>
+
         <div class="formula">
+          r(&tau;)
+          <span class="op">=</span>
+          &minus;(<i>p<sub>x</sub></i>
+          <span class="op">&minus;</span>
+          &#120124;[<i>p<sub>x</sub></i>])
+          <span class="op">&middot;</span>
+          (<span class="eq-T">T(&tau;)</span>
+          <span class="op">&minus;</span>
+          <i>p<sub>x</sub></i>)
+        </div>
+        <div class="caption">&#8594; reward by contribution to reducing <i>V</i></div>
+
+        <div class="subtitle" style="margin-top: 20px">But reducing <i>V</i> has <i>infinite</i> solutions.</div>
+        <div class="subtitle"><b>To reduce sycophancy,</b> <br>we want to end at reference <i>p<sub>ref</sub></i> = <i>p<sub>unbiased</sub></i></div>
+        <div class="formula derived">
           r(&tau;)
           <span class="op">=</span>
           &minus;(<span class="eq-var" data-var="biased"><i>p<sub>biased</sub></i></span>
@@ -518,12 +685,7 @@
           <span class="op">&minus;</span>
           <span class="eq-var" data-var="biased"><i>p<sub>biased</sub></i></span>)
         </div>
-        <div class="caption">Pushes <i>p<sub>biased</sub></i> toward <i>p<sub>unbiased</sub></i></div>
-      </div>
-
-      <div class="rate-box rate-box--unbiased">
-        <div class="label"><i>p<span class="sub">ref</span></i> = <i>p<span class="sub">unbiased</span></i></div>
-        <div class="value">1&frasl;3</div>
+        <div class="caption">&#8594; reward by contribution to moving<br>the rates towards <i>p<sub>ref</sub></i></div>
       </div>
     </div>
   </section>
@@ -726,24 +888,82 @@
     });
   }
 
-  // Arrows: each bracket → corresponding rate box (black, no label).
+  // Arrows: each bracket → its named slot inside the horizontal rates
+  // container. Biased runs horizontally into the left of its slot. Unbiased
+  // is routed via the LEFT of col-c (above the equations) and enters its slot
+  // from the BOTTOM, so the curve doesn't cross the equation text.
   function drawBracketToRateArrows(svg, cRect) {
-    const BLACK = '#1A1A1A';
-    const pairs = [
-      { bracketSel: '.group--biased .bracket-cell',
-        boxSel:     '.rate-box--biased',   color: BLACK },
-      { bracketSel: '.group--unbiased .bracket-cell',
-        boxSel:     '.rate-box--unbiased', color: BLACK },
-    ];
-    pairs.forEach(({ bracketSel, boxSel, color }) => {
-      const bracket = document.querySelector(bracketSel).getBoundingClientRect();
-      const box     = document.querySelector(boxSel).getBoundingClientRect();
-      const x1 = bracket.right - cRect.left;
-      const y1 = (bracket.top + bracket.bottom) / 2 - cRect.top;
-      const x2 = box.left - cRect.left - 2;
-      const y2 = (box.top + box.bottom) / 2 - cRect.top;
-      drawCurve(svg, x1, y1, x2, y2, color, 0.5, 0.6, 1.0);
-    });
+    // Biased: horizontal arrow into left edge of biased slot.
+    const biasedBr = document.querySelector('.group--biased .bracket-cell');
+    const biasedSl = document.querySelector('.rate-slot[data-rate="biased"]');
+    if (biasedBr && biasedSl) {
+      const br = biasedBr.getBoundingClientRect();
+      const sr = biasedSl.getBoundingClientRect();
+      const x1 = br.right - cRect.left;
+      const y1 = (br.top + br.bottom) / 2 - cRect.top;
+      const x2 = sr.left - cRect.left - 2;
+      const y2 = (sr.top + sr.bottom) / 2 - cRect.top;
+      drawCurve(svg, x1, y1, x2, y2, RED, 0.5, 0.85, 1.0);
+      addArrowLabel(svg, (x1 + x2) / 2, (y1 + y2) / 2 - 6, RED, '2⁄3');
+    }
+
+    // Unbiased: orthogonal path that runs UNDER the biased slot, then turns
+    // straight UP into the bottom of the unbiased slot so the arrowhead points
+    // up into the box (rather than glancing in from a diagonal).
+    const unbiasedBr = document.querySelector('.group--unbiased .bracket-cell');
+    const unbiasedSl = document.querySelector('.rate-slot[data-rate="unbiased"]');
+    if (unbiasedBr && unbiasedSl && biasedSl) {
+      const br = unbiasedBr.getBoundingClientRect();
+      const sr = unbiasedSl.getBoundingClientRect();
+      const x1 = br.right - cRect.left;
+      const y1 = (br.top + br.bottom) / 2 - cRect.top;
+      const xEnd = (sr.left + sr.right) / 2 - cRect.left;  // up into center of p_unbiased
+      const yEnd = sr.bottom - cRect.top + 2;              // arrowhead tip at slot bottom
+
+      // Run the vertical stem just to the right of the bracket so it stays in
+      // the gutter between cols B and C and never crosses equation text. Then
+      // a short horizontal segment under p_unbiased, and finally straight up.
+      const bendX1 = x1 + 40;
+      const middleY = yEnd + 18;
+      const R = 6;  // corner radius
+
+      // Each 90° bend is rounded with a quadratic bezier whose control point
+      // is the sharp-corner vertex. Stop the line segments R px short of the
+      // corner on both sides and let Q sweep through.
+      const d = `M ${x1} ${y1}
+                 L ${bendX1 - R} ${y1}
+                 Q ${bendX1} ${y1} ${bendX1} ${y1 - R}
+                 L ${bendX1} ${middleY + R}
+                 Q ${bendX1} ${middleY} ${bendX1 + R} ${middleY}
+                 L ${xEnd - R} ${middleY}
+                 Q ${xEnd} ${middleY} ${xEnd} ${middleY - R}
+                 L ${xEnd} ${yEnd}`;
+      const path = document.createElementNS(SVG_NS, 'path');
+      path.setAttribute('d', d);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', '#15803D');
+      path.setAttribute('stroke-width', '1.0');
+      path.setAttribute('stroke-linecap', 'butt');
+      path.setAttribute('stroke-linejoin', 'miter');
+      path.setAttribute('marker-end', 'url(#arrow-green)');
+      svg.appendChild(path);
+
+      // Label on the vertical run.
+      addArrowLabel(svg, bendX1 - 12, (y1 + middleY) / 2, '#15803D', '1⁄3');
+    }
+  }
+
+  function addArrowLabel(svg, x, y, color, label) {
+    const text = document.createElementNS(SVG_NS, 'text');
+    text.setAttribute('x', x);
+    text.setAttribute('y', y);
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('font-family', "Georgia, 'Times New Roman', serif");
+    text.setAttribute('font-size', '14');
+    text.setAttribute('font-weight', '600');
+    text.setAttribute('fill', color);
+    text.textContent = label;
+    svg.appendChild(text);
   }
 
   // Arrows: only the FIRST occurrence of each equation variable gets an arrow
@@ -831,7 +1051,6 @@
   function layout() {
     positionLM();
     positionBrackets();
-    positionRateBoxes();
     positionRewardEq();
     positionPromptBlocks();
     drawLMArrows();
@@ -857,22 +1076,19 @@
       `@media print { @page { size: ${w}px ${h}px; margin: 0; } }`;
   }
 
-  // Translate the reward-equation block so that the FORMULA line specifically
-  // is centered between the two (already-translated) rate boxes — keeps the
-  // title/caption flowing above/below.
+  // Align the BIASED slot with the biased bracket so the red arrow runs
+  // horizontally to the right. The unbiased arrow curves up to its slot below.
   function positionRewardEq() {
-    const eq = document.querySelector('.reward-eq');
-    const formula = document.querySelector('.reward-eq .formula');
-    const biasedBox = document.querySelector('.rate-box--biased');
-    const unbiasedBox = document.querySelector('.rate-box--unbiased');
-    if (!eq || !formula || !biasedBox || !unbiasedBox) return;
-    eq.style.transform = 'translateY(0)';
-    const formulaRect = formula.getBoundingClientRect();
-    const biasedRect = biasedBox.getBoundingClientRect();
-    const unbiasedRect = unbiasedBox.getBoundingClientRect();
-    const targetCenter = (biasedRect.bottom + unbiasedRect.top) / 2;
-    const currentCenter = (formulaRect.top + formulaRect.bottom) / 2;
-    eq.style.transform = `translateY(${targetCenter - currentCenter}px)`;
+    const wrap = document.querySelector('.obj-wrap');
+    const biasedSlot = document.querySelector('.rate-slot[data-rate="biased"]');
+    const biasedBracket = document.querySelector('.group--biased .bracket-cell');
+    if (!wrap || !biasedSlot || !biasedBracket) return;
+    wrap.style.transform = 'translateY(0)';
+    const bb = biasedBracket.getBoundingClientRect();
+    const bs = biasedSlot.getBoundingClientRect();
+    const bracketY = (bb.top + bb.bottom) / 2;
+    const slotY    = (bs.top + bs.bottom) / 2;
+    wrap.style.transform = `translateY(${bracketY - slotY}px)`;
   }
   window.addEventListener('load', layout);
   window.addEventListener('resize', layout);

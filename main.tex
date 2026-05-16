@@ -214,7 +214,7 @@ consistency term through a mixing weight\footnote{Further, like BCT and unlike A
 \label{sec:experiments}
 
 \subsection{Dataset} \label{sec: dataset}
-We benchmark RMCT against BCT on the sycophancy dataset of \citet{chua_bias-augmented_2024}. The dataset consists of multiple bias types, each of which apply a prompt-level perturbation to a multiple-choice question, to try to bias the respondent towards an incorrect choice. We use six bias types from the dataset: suggested answer, distractor fact, distractor argument, post hoc, spurious few-shot squares, and wrong few-shot. Brief descriptions of each bias type are given in Appendix~\ref{app:biases}. Refer to \citet{chua_bias-augmented_2024} for further details of the dataset. 
+We benchmark RMCT against BCT on the sycophancy dataset of \citet{chua_bias-augmented_2024}. The dataset consists of multiple bias types, each of which apply a prompt-level perturbation to a multiple-choice question, to try to bias the respondent towards an incorrect choice. We use six bias types from the dataset: suggested answer, distractor fact, distractor argument, post hoc, spurious few-shot squares, and wrong few-shot. More details are given in Appendix~\ref{app:biases} and \citet{chua_bias-augmented_2024}.
 
 \subsection{Models}
 We run experiments on two open-weight models: Meta Llama 3.1 8B
@@ -332,20 +332,6 @@ Appendix~\ref{app:control-results}.}
 
 \section{Discussion} \label{sec: discussion}
 
-
-%% Jannes: the "without constraining other aspects" framing is a bit too strong -- soften.
-We introduced Rate Matching Consistency Training (RMCT), a
-reinforcement-learning method for selective consistency training that
-enforces consistency over selected behavioural properties while
-leaving the remaining output unconstrained. On the sycophancy
-benchmark of \citet{chua_bias-augmented_2024}, evaluated on Meta Llama
-3.1 8B Instruct and OpenAI GPT OSS 20B, RMCT matches BCT's held-out
-$\text{BSR}_{\rightarrow}$ reduction on Meta Llama 3.1 8B Instruct and
-exceeds it on OpenAI GPT OSS 20B, where BCT fails to generalise.
-Across both models, RMCT preserves BVR close to the base-model rate; BCT,
-by contrast, substantially reduces it on both the trained and the
-held-out biases.
-
 \paragraph{Towards Bias switch rate}
 RMCT reduces both models' $\text{BSR}_{\rightarrow}$ less than BCT on the training bias. Despite the smaller in-distribution reduction, RMCT matches BCT's
 held-out $\text{BSR}_{\rightarrow}$ reduction on Llama and exceeds it on GPT, where BCT's held-out average is statistically indistinguishable from the base rate. The
@@ -366,24 +352,6 @@ depends only on the per-input behaviour rates and so does not
 penalise bias verbalisation; the
 verbalisation rate accordingly remains close to the base model on
 the held-out average for both models.
-
-\paragraph{Methodological choices.}
-We use six of the bias types from \citet{chua_bias-augmented_2024}
-and exclude three. The ``Are you sure?'' and positional biases are
-scored by a procedure that differs from the per-question switch
-rate used in the present work, which would preclude a uniform
-interpretation of $\text{BSR}_{\rightarrow}$ and BVR across bias
-types; see \citet{chua_bias-augmented_2024} for details. Hindsight
-is supported only on a single source dataset that we did not adopt,
-since we wished to evaluate on a more recent and harder benchmark,
-namely HLE. For each method-model configuration we train at three
-learning rates and pool checkpoints across them when computing
-metrics; this forecloses learning-rate cherry-picking. Hyperparameter-tuning was employed to determine a suitable number of datapoints and batch sizes for BCT and RMCT, the
-inclusion of the instruction-following samples for BCT, and the number of trajectories per datapoint, and
-KL-penalty coefficient for RMCT. These
-tuning splits did not use the same training datasets and bias combinations as the main experiments, nor the same evaluation
-datasets. The post-hoc bias was
-excluded from the tuning evaluations.
 
 \paragraph{Data efficiency vs. compute.} RMCT extracts a learning
 signal from sample-level variation within each group of trajectories,
@@ -501,6 +469,13 @@ will pick the squared option on the test question.
 question, each labelled with a wrong answer rather than the correct
 one. The cue is the pattern of consistently incorrect labelling.
 
+\paragraph{Excluded biases.} We exclude the ``Are you sure?'' and
+positional biases, which are scored by a procedure that differs from
+the per-question switch rate used here and so would preclude a uniform
+interpretation of $\text{BSR}_{\rightarrow}$ and BVR across bias
+types, and hindsight, which is supported only on a single source
+dataset that we did not adopt in favour of the harder HLE benchmark.
+
 \section{Training hyperparameters}
 \label{app:hyperparameters}
 
@@ -533,6 +508,14 @@ we run three learning rates~$\{1.0,\,2.86,\,5.0\} \times 10^{-4}$ and
 pool checkpoints across them when computing metrics. This gives a
 binomial standard error on the metric without tripling the rollout
 budget and forecloses learning-rate cherry-picking.
+
+\paragraph{Tuning protocol.} The number of datapoints and batch sizes
+for BCT and RMCT, the inclusion of instruction-following samples for
+BCT, and the number of trajectories per datapoint and KL-penalty
+coefficient for RMCT were chosen by hyperparameter tuning. The tuning
+splits used different training datasets, bias combinations, and
+evaluation datasets from the main experiments, and excluded post-hoc
+from the tuning evaluations.
 
 \section{Control results}
 \label{app:control-results}
