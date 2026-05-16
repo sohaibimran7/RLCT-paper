@@ -153,7 +153,7 @@ An LLM defines a distribution over responses. For a binary property of interest,
 Reinforcement learning is naturally suited to such rate-level objectives. RMCT samples $N$ trajectories per input, evaluate the property of interest on each, and turn the resulting per-input rates into a reward signal. Defining the reward at the output level — based only on the property of the final response, not on the chain of thought — mitigates the direct obfuscation pressure of process-level supervision \cite{baker2025monitoring}. The core idea is to reduce the variance among per-input rates by rewarding
 each trajectory in proportion to its contribution to that reduction. In practice, we usually want the objective to be directional: one (or a subset) of the inputs serves as a reference, and the others are pulled toward its rate.
 
-Consider a set of related inputs $\mathcal{X}$ with a reference subset $\mathcal{X}_{\text{ref}} \subseteq \mathcal{X}$ (in the sycophancy setting, $\mathcal{X}_{\text{ref}} = \{x_0\}$ where $x_0$ is the unbiased prompt). Let $\tau_{x,i}$ denote the $i$-th of $N$ trajectories sampled on $x$, and $T(\tau) \in \{0,1\}$ a binary classifier of the target behavioural property (e.g.\ ``the response matches the user's bias''). The per-input behaviour rate is
+Consider a set of related inputs $\mathcal{X}$ with a reference subset $\mathcal{X}_{\text{ref}} \subseteq \mathcal{X}$ (in the sycophancy setting, $\mathcal{X}_{\text{ref}} = \{x_0\}$ where $x_0$ is the unbiased prompt). Let $\tau_{x,i}$ denote the $i$-th of $N$ trajectories sampled on $x$, and $T(\tau) \in \{0,1\}$ a binary classifier of the target behavioural property (e.g.\ ``the response matches the user's bias'').\footnote{When $T$ is binary, its distribution is a Bernoulli fully determined by the rate $p_x$, so rate matching and distribution matching coincide. For a non-binary $T$ (e.g.\ a $K$-valued score), the rate captures only the mean and matching it no longer implies matching the distribution. The framework extends naturally to distribution matching in this case; see Appendix~\ref{app:distribution-matching}.} The per-input behaviour rate is
 \begin{equation}
 p_x = \frac{1}{N} \sum_{i=1}^{N} T(\tau_{x,i})
 \end{equation}
@@ -738,5 +738,20 @@ r_{x,i} =
 \end{cases}
 \end{equation}
 All experiments in this paper use $\alpha = 0$ (the consistency reward alone). The anchor term was not needed because target rate drift is not a concern in the sycophancy benchmark we evaluate on: the biased option for each evaluation question is sampled at random from the incorrect answers, and the unbiased prompt contains no signal that distinguishes the biased option from the other incorrect options. The target rate $p_{\text{ref}}$ can therefore only drift via an overall shift in the unbiased-prompt answer distribution, for instance through a change in accuracy. Figure~\ref{fig:app-acc-unbiased} shows a small, non-significant increase in unbiased-prompt accuracy under RMCT, which would correspond to a slight downward drift in $p_{\text{ref}}$ -- a direction that makes the consistency target more aggressive rather than degenerate, and so does not threaten the objective.
+
+\section{Extension to distribution matching}
+\label{app:distribution-matching}
+
+When $T(\tau) \in \{0,1\}$, the distribution of $T$ under any policy is a Bernoulli parameterised entirely by the rate $p_x$, so matching rates across inputs is equivalent to matching distributions. For a non-binary $T$ taking values in a finite set $\mathcal{T} = \{t_1, \ldots, t_K\}$ (e.g.\ a graded quality score or a multi-class label), the marginal distribution has $K-1$ degrees of freedom, and matching means no longer implies matching distributions.
+
+The framework extends naturally. Define a binary indicator for each value:
+\begin{equation}
+T_k(\tau) = \mathbf{1}[T(\tau) = t_k], \qquad k = 1, \ldots, K.
+\end{equation}
+Each $T_k$ is a valid binary trait, so the RMCT reward can be applied to each independently and summed:
+\begin{equation}
+r^{\text{dist}}_{x,i} = \sum_{k=1}^{K} -(p_{x,k} - p_{\text{ref},k})\,(T_k(\tau_{x,i}) - p_{x,k}),
+\end{equation}
+where $p_{x,k} = \frac{1}{N}\sum_i T_k(\tau_{x,i})$ is the empirical rate for value $t_k$. This is the policy-gradient estimator for the objective $\frac{1}{2}\sum_k (p_{x,k} - p_{\text{ref},k})^2$, i.e.\ the squared $\ell_2$ distance between the empirical distributions of $T$ on $x$ and on the reference. When $K=2$, the two indicators $T_1$ and $T_2 = 1 - T_1$ are redundant and the reward reduces to twice the binary RMCT reward.
 
 \end{document}
