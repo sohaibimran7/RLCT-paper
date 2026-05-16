@@ -742,9 +742,9 @@ All experiments in this paper use $\alpha = 0$ (the consistency reward alone). T
 \section{Extension to distribution matching}
 \label{app:distribution-matching}
 
-When $T(\tau) \in \{0,1\}$, the distribution of $T$ under any policy is a Bernoulli parameterised entirely by the rate $p_x$, so matching rates across inputs is equivalent to matching distributions. For a non-binary $T$ taking values in a finite set $\mathcal{T} = \{t_1, \ldots, t_K\}$ (e.g.\ a graded quality score or a multi-class label), the marginal distribution has $K-1$ degrees of freedom, and matching means no longer implies matching distributions.
+When $T(\tau) \in \{0,1\}$, the distribution of $T$ under any policy is a Bernoulli parameterised entirely by the rate $p_x$, so matching rates across inputs is equivalent to matching distributions. For a non-binary $T$ — whether taking values in a finite set $\mathcal{T} = \{t_1, \ldots, t_K\}$ (e.g.\ a graded quality score) or in a continuous range (e.g.\ a scalar reward signal) — the marginal distribution has more degrees of freedom than its mean, and matching means no longer implies matching distributions.
 
-The framework extends naturally. Define a binary indicator for each value:
+The framework extends naturally to finite-valued $T$. Define a binary indicator for each value:
 \begin{equation}
 T_k(\tau) = \mathbf{1}[T(\tau) = t_k], \qquad k = 1, \ldots, K.
 \end{equation}
@@ -753,5 +753,7 @@ Each $T_k$ is a valid binary trait, so the RMCT reward can be applied to each in
 r^{\text{dist}}_{x,i} = \sum_{k=1}^{K} -(p_{x,k} - p_{\text{ref},k})\,(T_k(\tau_{x,i}) - p_{x,k}),
 \end{equation}
 where $p_{x,k} = \frac{1}{N}\sum_i T_k(\tau_{x,i})$ is the empirical rate for value $t_k$. This is the policy-gradient estimator for the objective $\frac{1}{2}\sum_k (p_{x,k} - p_{\text{ref},k})^2$, i.e.\ the squared $\ell_2$ distance between the empirical distributions of $T$ on $x$ and on the reference. When $K=2$, the two indicators $T_1$ and $T_2 = 1 - T_1$ are redundant and the reward reduces to twice the binary RMCT reward.
+
+For continuous $T$, the same idea applies by replacing the sum over indicators with an expectation: one can apply the RMCT reward to any collection of binary thresholding functions $\mathbf{1}[T(\tau) \leq t]$, which correspond to matching the empirical CDFs of $T$ across inputs.
 
 \end{document}
