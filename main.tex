@@ -214,7 +214,7 @@ consistency term through a mixing weight\footnote{Further, like BCT and unlike A
 \label{sec:experiments}
 
 \subsection{Dataset} \label{sec: dataset}
-We benchmark RMCT against BCT on the sycophancy dataset of \citet{chua_bias-augmented_2024}. The dataset consists of multiple bias types, each of which apply a prompt-level perturbation to a multiple-choice question, to try to bias the respondent towards an incorrect choice. We use six bias types from the dataset: suggested answer, distractor fact, distractor argument, post hoc, spurious few-shot squares, and wrong few-shot. Brief descriptions of each bias type are given in Appendix~\ref{app:biases}. We exclude the ``Are you sure?'' and positional biases, which are scored by a procedure that differs from the per-question switch rate used here and so would preclude a uniform interpretation of $\text{BSR}_{\rightarrow}$ and BVR across bias types, and hindsight, which is supported only on a single source dataset that we did not adopt in favour of the harder HLE benchmark. Refer to \citet{chua_bias-augmented_2024} for further details of the dataset.
+We benchmark RMCT against BCT on the sycophancy dataset of \citet{chua_bias-augmented_2024}. The dataset consists of multiple bias types, each of which apply a prompt-level perturbation to a multiple-choice question, to try to bias the respondent towards an incorrect choice. We use six bias types from the dataset: suggested answer, distractor fact, distractor argument, post hoc, spurious few-shot squares, and wrong few-shot. Brief descriptions of each bias type, along with the rationale for excluding the remaining three, are given in Appendix~\ref{app:biases}. Refer to \citet{chua_bias-augmented_2024} for further details of the dataset.
 
 \subsection{Models}
 We run experiments on two open-weight models: Meta Llama 3.1 8B
@@ -468,6 +468,13 @@ will pick the squared option on the test question.
 \paragraph{Wrong few-shot.} Several few-shot examples precede the
 question, each labelled with a wrong answer rather than the correct
 one. The cue is the pattern of consistently incorrect labelling.
+
+\paragraph{Excluded biases.} We exclude the ``Are you sure?'' and
+positional biases, which are scored by a procedure that differs from
+the per-question switch rate used here and so would preclude a uniform
+interpretation of $\text{BSR}_{\rightarrow}$ and BVR across bias
+types, and hindsight, which is supported only on a single source
+dataset that we did not adopt in favour of the harder HLE benchmark.
 
 \section{Training hyperparameters}
 \label{app:hyperparameters}
