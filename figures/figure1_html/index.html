@@ -272,6 +272,7 @@
     align-items: center;
   }
   .reward-eq .op-sep { font-style: normal; margin: 0 8px; }
+  .op-upright { font-style: normal; }
   .pbar {
     display: inline-block;
     position: relative;
@@ -651,22 +652,27 @@
       </div>
 
       <div class="reward-eq">
-        <div class="rates-title" style="margin-top: 12px">b. Reward for rollout <i>&tau;</i> on input <i>x</i>:</div>
+        <div class="rates-title" style="margin-top: 6px">b. Compute mean &#120124;[<i>p<sub>x</sub></i>]</div>
+        <div class="caption">&rarr; Goal: minimize variance <i>V</i> = <span class="op-upright">Var</span>[<i>p<sub>x</sub></i>]</div>
+      </div>
+
+      <div class="reward-eq" style="margin-top: 0px">
+        <div class="rates-title" style="margin-top: 0px">c. Reward for rollout <i>&tau;</i> on input <i>x</i>:</div>
 
         <div class="formula">
           r(&tau;)
           <span class="op">=</span>
           &minus;(<i>p<sub>x</sub></i>
           <span class="op">&minus;</span>
-          E[<i>p<sub>x</sub></i>])
+          &#120124;[<i>p<sub>x</sub></i>])
           <span class="op">&middot;</span>
           (<span class="eq-T">T(&tau;)</span>
           <span class="op">&minus;</span>
           <i>p<sub>x</sub></i>)
         </div>
-        <div class="caption">&#8594; reward by contribution to<br>reducing <i>V</i> = Var[<i>p<sub>x</sub></i>]</div>
+        <div class="caption">&#8594; reward by contribution to reducing <i>V</i></div>
 
-        <div class="subtitle" style="margin-top: 26px">But reducing <i>V</i> has <i>infinite</i> solutions.</div>
+        <div class="subtitle" style="margin-top: 20px">But reducing <i>V</i> has <i>infinite</i> solutions.</div>
         <div class="subtitle"><b>To reduce sycophancy,</b> <br>we want to end at reference <i>p<sub>ref</sub></i> = <i>p<sub>unbiased</sub></i></div>
         <div class="formula derived">
           r(&tau;)
@@ -897,8 +903,8 @@
       const y1 = (br.top + br.bottom) / 2 - cRect.top;
       const x2 = sr.left - cRect.left - 2;
       const y2 = (sr.top + sr.bottom) / 2 - cRect.top;
-      drawCurve(svg, x1, y1, x2, y2, '#B91C1C', 0.5, 0.85, 1.0);
-      addArrowLabel(svg, (x1 + x2) / 2, (y1 + y2) / 2 - 6, '#B91C1C', '2⁄3');
+      drawCurve(svg, x1, y1, x2, y2, RED, 0.5, 0.85, 1.0);
+      addArrowLabel(svg, (x1 + x2) / 2, (y1 + y2) / 2 - 6, RED, '2⁄3');
     }
 
     // Unbiased: orthogonal path that runs UNDER the biased slot, then turns
@@ -917,13 +923,20 @@
       // Run the vertical stem just to the right of the bracket so it stays in
       // the gutter between cols B and C and never crosses equation text. Then
       // a short horizontal segment under p_unbiased, and finally straight up.
-      const bendX1 = x1 + 18;
+      const bendX1 = x1 + 40;
       const middleY = yEnd + 18;
+      const R = 6;  // corner radius
 
+      // Each 90° bend is rounded with a quadratic bezier whose control point
+      // is the sharp-corner vertex. Stop the line segments R px short of the
+      // corner on both sides and let Q sweep through.
       const d = `M ${x1} ${y1}
-                 L ${bendX1} ${y1}
-                 L ${bendX1} ${middleY}
-                 L ${xEnd} ${middleY}
+                 L ${bendX1 - R} ${y1}
+                 Q ${bendX1} ${y1} ${bendX1} ${y1 - R}
+                 L ${bendX1} ${middleY + R}
+                 Q ${bendX1} ${middleY} ${bendX1 + R} ${middleY}
+                 L ${xEnd - R} ${middleY}
+                 Q ${xEnd} ${middleY} ${xEnd} ${middleY - R}
                  L ${xEnd} ${yEnd}`;
       const path = document.createElementNS(SVG_NS, 'path');
       path.setAttribute('d', d);
