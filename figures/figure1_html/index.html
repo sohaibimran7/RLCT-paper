@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RMCT — Figure 1</title>
+<style>
+  :root {
+    --bg:        #FFFFFF;
+    --ink:       #1A1A1A;
+    --ink-soft:  #6B6B6B;
+    --ink-faint: #9A9A9A;
+    --rule:      #1A1A1A;
+    --rule-soft: #BFBFBF;
+
+    --biased:    #DC2F2F;
+    --unbiased:  #1F9D55;
+    --trait:     #2563EB;
+
+    --pad-col:   16px;
+  }
+
+  @media print {
+    /* Sized larger than the figure; we crop to the figure's actual bbox
+       in a post-render step (pdfcrop). */
+    @page { size: 1700px 800px; margin: 0; }
+    html, body { margin: 0; padding: 0; }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue",
+                 "Segoe UI", system-ui, sans-serif;
+    color: var(--ink);
+    font-size: 13px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .figure {
+    position: relative;
+    width: max-content;
+    padding: 12px 0;
+    background: var(--bg);
+    display: grid;
+    grid-template-columns: 280px max-content 240px;
+    column-gap: var(--pad-col);
+    justify-content: start;
+  }
+  .figure-svg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 1;
+  }
+
+  /* ─────────────── section headers ─────────────── */
+  .col > header { margin-bottom: 22px; }
+  .col-b > header { padding-left: 140px; }
+  .section-title {
+    font-weight: 700;
+    font-size: 19px;
+    letter-spacing: -0.005em;
+    color: var(--ink);
+    white-space: nowrap;
+    text-align: center;
+  }
+  .section-title .letter { color: var(--ink); margin-right: 2px; }
+  .section-sub {
+    margin-top: 4px;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+
+  /* ─────────────── COLUMN A: prompts ─────────────── */
+  .col-a {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  .prompt-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .prompt-label .doc-icon { width: 16px; height: 16px; }
+  .prompt-label--biased   { color: var(--biased); }
+  .prompt-label--unbiased { color: var(--unbiased); }
+
+  .prompt-card {
+    position: relative;
+    width: 280px;
+    background: var(--bg);
+    border: 1.5px solid var(--ink);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .prompt-card p { margin-bottom: 8px; font-size: 13.5px; }
+  .prompt-card .options p { margin-bottom: 4px; }
+  .prompt-card .options { margin-top: 6px; }
+  .prompt-card .cue {
+    position: relative;
+    margin-top: 14px;
+    padding-right: 22px;
+    font-style: italic;
+    color: var(--biased);
+  }
+  .prompt-card > *:last-child { margin-bottom: 0; }
+  .prompt-card .options > p:last-child { margin-bottom: 0; }
+  .prompt-card .warn {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 14px;
+    color: var(--biased);
+  }
+
+  /* ─────────────── COLUMN B: rollouts ─────────────── */
+  .col-b { position: relative; }
+
+  .rollouts-area {
+    position: relative;
+    display: grid;
+    grid-template-columns: 108px auto;
+    align-items: center;
+    column-gap: 20px;
+  }
+
+  .lm-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    align-self: center;
+    justify-self: center;
+  }
+  .lm-cell .lm-label {
+    font-size: 12.5px;
+    color: var(--ink);
+  }
+
+  .groups {
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+    align-items: flex-start;
+  }
+
+  .group {
+    position: relative;
+    display: grid;
+    grid-template-columns: 56px max-content 50px;
+    column-gap: 14px;
+    row-gap: 14px;
+    align-items: center;
+    padding-right: 16px;
+    width: max-content;
+  }
+
+  .group-header {
+    grid-column: 2 / -1;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0 4px 2px 0;
+  }
+  .group-header .name {
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .group--biased   .group-header .name { color: var(--biased); }
+  .group--unbiased .group-header .name { color: var(--unbiased); }
+  .group-header .matches {
+    font-size: 13px;
+    color: var(--trait);
+    font-weight: 500;
+    transform: translateX(28px);
+  }
+
+  .sample-cell {
+    grid-column: 1;
+    justify-self: center;
+  }
+  .response-cell {
+    grid-column: 2;
+    width: 240px;
+    background: var(--bg);
+    border: 1px solid var(--ink);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .response-cell b { font-weight: 700; }
+  .score-cell {
+    grid-column: 3;
+    justify-self: start;
+    width: 32px; height: 32px;
+    display: grid; place-items: center;
+    border: 1.2px solid var(--trait);
+    color: var(--trait);
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 15px;
+  }
+
+  .bracket-cell {
+    position: absolute;
+    right: 0;
+    width: 18px;
+    border-top: 1.4px dashed var(--ink);
+    border-right: 1.4px dashed var(--ink);
+    border-bottom: 1.4px dashed var(--ink);
+    border-radius: 0 8px 8px 0;
+    pointer-events: none;
+  }
+
+  .b-svg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: visible;
+  }
+
+  /* ─────────────── COLUMN C: objective ─────────────── */
+  .col-c {
+    display: flex;
+    flex-direction: column;
+    margin-left: 24px;
+  }
+  .obj-wrap {
+    margin-top: 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+  }
+  .rate-box {
+    width: 200px;
+    border: 1.5px solid;
+    border-radius: 8px;
+    padding: 10px 12px;
+    text-align: center;
+    background: var(--bg);
+  }
+  .rate-box .label {
+    font-size: 17px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  .rate-box .value {
+    margin-top: 2px;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.05;
+  }
+  .rate-box--biased {
+    border-color: var(--biased);
+    color: var(--biased);
+  }
+  .rate-box--unbiased {
+    border-color: var(--unbiased);
+    color: var(--unbiased);
+  }
+
+  .reward-eq {
+    text-align: center;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+  .reward-eq .title {
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 15px;
+  }
+  .reward-eq .caption {
+    margin-top: 8px;
+    font-size: 14px;
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+  .reward-eq .caption sub { font-style: normal; font-size: 0.72em; }
+  .reward-eq .intuition {
+    margin-top: 2px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+  .reward-eq .formula {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-style: italic;
+    font-size: 17px;
+    white-space: nowrap;
+  }
+  .reward-eq .formula .op { font-style: normal; padding: 0 1px; }
+  .reward-eq .formula sub { font-style: normal; font-size: 0.72em; }
+  .reward-eq .eq-var { padding: 0 1px; }
+  .reward-eq .eq-var[data-var="biased"]   { color: var(--biased); }
+  .reward-eq .eq-var[data-var="unbiased"] { color: var(--unbiased); }
+  .reward-eq .eq-T { padding: 0 1px; color: var(--trait); }
+
+  .sub { font-size: 0.62em; vertical-align: -0.25em; font-weight: 500; }
+</style>
+</head>
+<body>
+
+<!-- ─────────── reusable SVG defs ─────────── -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- arrowhead markers -->
+    <marker id="arrow-red"   viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="6"  markerHeight="6"   orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#DC2F2F"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="6"  markerHeight="6"   orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#1F9D55"/>
+    </marker>
+    <marker id="arrow-black" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="8"  markerHeight="8"   orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#1A1A1A"/>
+    </marker>
+    <!-- Document icon -->
+    <symbol id="i-doc" viewBox="0 0 16 16">
+      <path d="M3 1.5h6.5L13 5v9.5H3z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+      <path d="M9.5 1.5V5H13" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+      <line x1="5.2" y1="8" x2="10.8" y2="8" stroke="currentColor" stroke-width="1"/>
+      <line x1="5.2" y1="10.5" x2="10.8" y2="10.5" stroke="currentColor" stroke-width="1"/>
+      <line x1="5.2" y1="13" x2="9.5" y2="13" stroke="currentColor" stroke-width="1"/>
+    </symbol>
+
+    <!-- Warning triangle -->
+    <symbol id="i-warn" viewBox="0 0 16 16">
+      <path d="M8 2 L15 14 L1 14 Z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+      <line x1="8" y1="6.5" x2="8" y2="10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+      <circle cx="8" cy="12" r="0.7" fill="currentColor"/>
+    </symbol>
+
+    <!-- Robot — neutral (LM policy) -->
+    <symbol id="r-neutral" viewBox="0 0 44 56">
+      <line x1="22" y1="4" x2="22" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <circle cx="22" cy="3.5" r="2" fill="currentColor"/>
+      <rect x="4" y="10" width="36" height="30" rx="4" fill="none" stroke="currentColor" stroke-width="1.8"/>
+      <circle cx="15" cy="22" r="2.2" fill="currentColor"/>
+      <circle cx="29" cy="22" r="2.2" fill="currentColor"/>
+      <line x1="14" y1="31" x2="30" y2="31" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      <line x1="14" y1="40" x2="14" y2="46" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      <line x1="30" y1="40" x2="30" y2="46" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      <line x1="22" y1="40" x2="22" y2="52" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    </symbol>
+
+    <!-- Robot — frowny (biased rollout) -->
+    <symbol id="r-frown" viewBox="0 0 44 56">
+      <line x1="22" y1="4" x2="22" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <circle cx="22" cy="3.5" r="2" fill="currentColor"/>
+      <rect x="4" y="10" width="36" height="30" rx="4" fill="none" stroke="currentColor" stroke-width="1.8"/>
+      <circle cx="15" cy="22" r="2.2" fill="currentColor"/>
+      <circle cx="29" cy="22" r="2.2" fill="currentColor"/>
+      <path d="M14 33 Q22 27 30 33" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      <line x1="14" y1="40" x2="14" y2="46" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      <line x1="30" y1="40" x2="30" y2="46" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      <line x1="22" y1="40" x2="22" y2="52" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    </symbol>
+
+    <!-- Robot — smiley (unbiased rollout) -->
+    <symbol id="r-smile" viewBox="0 0 44 56">
+      <line x1="22" y1="4" x2="22" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <circle cx="22" cy="3.5" r="2" fill="currentColor"/>
+      <rect x="4" y="10" width="36" height="30" rx="4" fill="none" stroke="currentColor" stroke-width="1.8"/>
+      <circle cx="15" cy="22" r="2.2" fill="currentColor"/>
+      <circle cx="29" cy="22" r="2.2" fill="currentColor"/>
+      <path d="M14 29 Q22 35 30 29" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      <line x1="14" y1="40" x2="14" y2="46" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      <line x1="30" y1="40" x2="30" y2="46" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      <line x1="22" y1="40" x2="22" y2="52" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="figure" id="figure">
+<svg class="figure-svg" id="figure-svg"></svg>
+
+  <!-- ───── COLUMN A: Related Inputs ───── -->
+  <section class="col col-a">
+    <header>
+      <h2 class="section-title"><span class="letter">1.</span> Pair Biased and Unbiased Prompts</h2>
+    </header>
+
+    <div class="prompt-block prompt-block--biased">
+      <div class="prompt-label prompt-label--biased">
+        <svg class="doc-icon"><use href="#i-doc"/></svg>
+        Biased Prompt
+      </div>
+      <div class="prompt-card">
+        <p>A ship leaks oil near a coast.</p>
+        <p>How does it most affect the habitat?</p>
+        <div class="options">
+          <p>(A) Birds struggle to fly.</p>
+          <p>(B) Plants gain more nutrients.</p>
+        </div>
+        <p class="cue">I think the answer is (B).<svg class="warn"><use href="#i-warn"/></svg></p>
+      </div>
+    </div>
+
+    <div class="prompt-block prompt-block--unbiased">
+      <div class="prompt-label prompt-label--unbiased">
+        <svg class="doc-icon"><use href="#i-doc"/></svg>
+        Unbiased Prompt
+      </div>
+      <div class="prompt-card">
+        <p>A ship leaks oil near a coast.</p>
+        <p>How does it most affect the habitat?</p>
+        <div class="options">
+          <p>(A) Birds struggle to fly.</p>
+          <p>(B) Plants gain more nutrients.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───── COLUMN B: Rollouts & Trait Classifier ───── -->
+  <section class="col col-b">
+    <header>
+      <h2 class="section-title"><span class="letter">2.</span> Sample Rollouts; Score with Trait Classifier</h2>
+    </header>
+
+    <div class="rollouts-area" id="rollouts">
+
+      <div class="lm-cell">
+        <svg width="56" height="72" style="color: var(--ink)"><use href="#r-neutral"/></svg>
+        <div class="lm-label">LM (policy)</div>
+      </div>
+
+      <div class="groups">
+
+        <!-- BIASED group -->
+        <div class="group group--biased">
+          <div class="group-header">
+            <span class="name">Biased-prompt rollouts</span>
+            <span class="matches"><i>T</i>(&tau;): matches bias?</span>
+          </div>
+
+          <div class="sample-cell"><svg width="34" height="44" style="color: var(--biased)"><use href="#r-neutral"/></svg></div>
+          <div class="response-cell">1. The prompt suggests (B)…<br>Best answer: (B)</div>
+          <div class="score-cell">1</div>
+
+          <div class="sample-cell"><svg width="34" height="44" style="color: var(--biased)"><use href="#r-neutral"/></svg></div>
+          <div class="response-cell">2. Oil harms birds first…<br>Best answer: (A)</div>
+          <div class="score-cell">0</div>
+
+          <div class="sample-cell"><svg width="34" height="44" style="color: var(--biased)"><use href="#r-neutral"/></svg></div>
+          <div class="response-cell">3. This hurts birds at (B)…<br>Best answer: (B)</div>
+          <div class="score-cell">1</div>
+
+          <div class="bracket-cell"></div>
+        </div>
+
+        <!-- UNBIASED group -->
+        <div class="group group--unbiased">
+          <div class="group-header">
+            <span class="name">Unbiased-prompt rollouts</span>
+            <span class="matches">&nbsp;</span>
+          </div>
+
+          <div class="sample-cell"><svg width="34" height="44" style="color: var(--unbiased)"><use href="#r-neutral"/></svg></div>
+          <div class="response-cell">1. Oil coats feathers…<br>Best answer: (A)</div>
+          <div class="score-cell">0</div>
+
+          <div class="sample-cell"><svg width="34" height="44" style="color: var(--unbiased)"><use href="#r-neutral"/></svg></div>
+          <div class="response-cell">2. Birds would struggle to fly…<br>Best answer: (A)</div>
+          <div class="score-cell">0</div>
+
+          <div class="sample-cell"><svg width="34" height="44" style="color: var(--unbiased)"><use href="#r-neutral"/></svg></div>
+          <div class="response-cell">3. Plants don't gain nutrients…<br>Best answer: (B)</div>
+          <div class="score-cell">1</div>
+
+          <div class="bracket-cell"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <svg class="b-svg" id="b-svg"></svg>
+  </section>
+
+  <!-- ───── COLUMN C: RMCT Objective ───── -->
+  <section class="col col-c">
+    <header>
+      <h2 class="section-title"><span class="letter">3.</span> Match Rates with RMCT</h2>
+    </header>
+
+    <div class="obj-wrap">
+      <div class="rate-box rate-box--biased">
+        <div class="label"><i>p<span class="sub">biased</span></i></div>
+        <div class="value">2&frasl;3</div>
+      </div>
+
+      <div class="reward-eq">
+        <div class="title">Reward, for each rollout <i>&tau;</i></div>
+        <div class="formula">
+          r(&tau;)
+          <span class="op">=</span>
+          &minus;(<span class="eq-var" data-var="biased"><i>p<sub>biased</sub></i></span>
+          <span class="op">&minus;</span>
+          <span class="eq-var" data-var="unbiased"><i>p<sub>unbiased</sub></i></span>)
+          <span class="op">&middot;</span>
+          (<span class="eq-T">T(&tau;)</span>
+          <span class="op">&minus;</span>
+          <span class="eq-var" data-var="biased"><i>p<sub>biased</sub></i></span>)
+        </div>
+        <div class="caption">Pushes <i>p<sub>biased</sub></i> toward <i>p<sub>unbiased</sub></i></div>
+      </div>
+
+      <div class="rate-box rate-box--unbiased">
+        <div class="label"><i>p<span class="sub">ref</span></i> = <i>p<span class="sub">unbiased</span></i></div>
+        <div class="value">1&frasl;3</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const RED   = '#DC2F2F';
+  const GREEN = '#1F9D55';
+  const STROKE_WIDTH = 1.6;
+  // Pull the arrowhead tip inset from the endpoint by ~ this many px,
+  // so the marker triangle's tip lands on the target rather than the line stroke.
+  const TIP_INSET = 6;
+
+  // Align LM exactly to the midpoint of the gap between the last biased sample
+  // and the first unbiased sample.
+  function positionLM() {
+    const biasedSamples = document.querySelectorAll('.group--biased .sample-cell svg');
+    const unbiasedSamples = document.querySelectorAll('.group--unbiased .sample-cell svg');
+    if (!biasedSamples.length || !unbiasedSamples.length) return;
+    const lastBiased = biasedSamples[biasedSamples.length - 1].getBoundingClientRect();
+    const firstUnbiased = unbiasedSamples[0].getBoundingClientRect();
+    const targetY = (lastBiased.bottom + firstUnbiased.top) / 2;
+    const lm = document.querySelector('.lm-cell');
+    lm.style.transform = 'translateY(0)';
+    const r = lm.getBoundingClientRect();
+    const currentY = (r.top + r.bottom) / 2;
+    lm.style.transform = `translateY(${targetY - currentY}px)`;
+  }
+
+  // Align each prompt block vertically with the center of its corresponding
+  // rollouts group, so the prompt visually sits next to its rollouts.
+  function positionPromptBlocks() {
+    const pairs = [
+      { block: '.prompt-block--biased',   group: '.group--biased'   },
+      { block: '.prompt-block--unbiased', group: '.group--unbiased' },
+    ];
+    pairs.forEach(({ block, group }) => {
+      const b = document.querySelector(block);
+      const g = document.querySelector(group);
+      if (!b || !g) return;
+      b.style.transform = 'translateY(0)';
+      const br = b.getBoundingClientRect();
+      const gr = g.getBoundingClientRect();
+      const targetY = (gr.top + gr.bottom) / 2;
+      const currentY = (br.top + br.bottom) / 2;
+      b.style.transform = `translateY(${targetY - currentY}px)`;
+    });
+  }
+
+  // Align p_biased / p_unbiased rate boxes vertically with the centers of their
+  // corresponding brackets in column B.
+  function positionRateBoxes() {
+    const brackets = document.querySelectorAll('.bracket-cell');
+    if (brackets.length < 2) return;
+    const biasedBracketY = brackets[0].getBoundingClientRect();
+    const unbiasedBracketY = brackets[1].getBoundingClientRect();
+    const biasedCenter = (biasedBracketY.top + biasedBracketY.bottom) / 2;
+    const unbiasedCenter = (unbiasedBracketY.top + unbiasedBracketY.bottom) / 2;
+
+    const biasedBox = document.querySelector('.rate-box--biased');
+    const unbiasedBox = document.querySelector('.rate-box--unbiased');
+    biasedBox.style.transform = 'translateY(0)';
+    unbiasedBox.style.transform = 'translateY(0)';
+
+    const bbRect = biasedBox.getBoundingClientRect();
+    const ubRect = unbiasedBox.getBoundingClientRect();
+    const bbCenter = (bbRect.top + bbRect.bottom) / 2;
+    const ubCenter = (ubRect.top + ubRect.bottom) / 2;
+
+    biasedBox.style.transform = `translateY(${biasedCenter - bbCenter}px)`;
+    unbiasedBox.style.transform = `translateY(${unbiasedCenter - ubCenter}px)`;
+  }
+
+  function drawCurve(svg, x1, y1, x2, y2, color, curveFactor = 0.55, endTangentRatio = 0.6, strokeWidth = STROKE_WIDTH) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    // Slightly bias the start tangent toward the chord too (less wavy);
+    // endTangentRatio controls how horizontal the curve is at its endpoint:
+    // ratio close to 1.0 → nearly horizontal end (arrowhead points along x).
+    const cx1 = x1 + dx * curveFactor;
+    const cy1 = y1 + dy * 0.2;
+    const cx2 = x1 + dx * (1 - curveFactor);
+    const cy2 = y1 + dy * endTangentRatio;
+    const path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('d', `M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', color);
+    path.setAttribute('stroke-width', strokeWidth);
+    path.setAttribute('stroke-linecap', 'butt');
+    const marker = color === RED   ? 'url(#arrow-red)'
+                 : color === GREEN ? 'url(#arrow-green)'
+                 : 'url(#arrow-black)';
+    path.setAttribute('marker-end', marker);
+    svg.appendChild(path);
+  }
+
+  // Arrows: LM → each sample robot (within column B)
+  function drawLMArrows() {
+    const svg = document.getElementById('b-svg');
+    const cRect = svg.parentElement.getBoundingClientRect();
+    svg.innerHTML = '';
+
+    const lm = document.querySelector('.lm-cell svg').getBoundingClientRect();
+    const samples = document.querySelectorAll('.sample-cell svg');
+
+    const lmX = lm.right - cRect.left - 4;
+    const lmY = lm.top + lm.height / 2 - cRect.top;
+
+    samples.forEach((s) => {
+      const r = s.getBoundingClientRect();
+      const isBiased = s.closest('.group--biased') !== null;
+      // Land on the corner of the sample box closest to the LM:
+      // biased samples are above LM → bottom-left corner;
+      // unbiased samples are below LM → top-left corner.
+      const x2 = r.left - cRect.left + 4;
+      const y2 = isBiased
+        ? r.bottom - cRect.top - 6
+        : r.top    - cRect.top + 4;
+      const color = isBiased ? RED : GREEN;
+      drawCurve(svg, lmX, lmY, x2, y2, color);
+    });
+  }
+
+  // All cross-column arrows live on the figure-level SVG. Single function so
+  // we can clear once and draw both prompt→LM and bracket→rate arrows.
+  function drawFigureArrows() {
+    const svg = document.getElementById('figure-svg');
+    const cRect = svg.parentElement.getBoundingClientRect();
+    svg.innerHTML = '';
+    drawPromptToLMArrows(svg, cRect);
+    drawBracketToRateArrows(svg, cRect);
+  }
+
+  // Thin connector line (no arrowhead) for the T(τ) → score box links —
+  // they're informational ties, not flow arrows, so we deliberately make
+  // them lighter than the main arrows.
+  function drawThinLine(svg, x1, y1, x2, y2, color) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const cx1 = x1 + dx * 0.5;
+    const cy1 = y1 + dy * 0.25;
+    const cx2 = x1 + dx * 0.5;
+    const cy2 = y1 + dy * 0.75;
+    const path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('d', `M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', color);
+    path.setAttribute('stroke-width', '0.9');
+    path.setAttribute('stroke-opacity', '0.55');
+    path.setAttribute('stroke-linecap', 'butt');
+    path.setAttribute('stroke-dasharray', '3 2');
+    svg.appendChild(path);
+  }
+
+  // Connect T(τ) in the equation to each "Matches Bias?" score box, so the
+  // reader sees that every score box is one instance of T(τ).
+  function drawTArrows(svg, cRect) {
+    const tVar = document.querySelector('.eq-T');
+    if (!tVar) return;
+    const tr = tVar.getBoundingClientRect();
+    const x1 = tr.left - cRect.left;
+    const y1 = tr.top + tr.height / 2 - cRect.top;
+    document.querySelectorAll('.score-cell').forEach(box => {
+      const isBiased = box.closest('.group--biased') !== null;
+      const color = isBiased ? RED : GREEN;
+      const br = box.getBoundingClientRect();
+      const x2 = br.right - cRect.left + 2;
+      const y2 = br.top + br.height / 2 - cRect.top;
+      drawThinLine(svg, x1, y1, x2, y2, color);
+    });
+  }
+
+  // Arrows: each prompt card → LM (spans columns A and B)
+  function drawPromptToLMArrows(svg, cRect) {
+
+    const lm = document.querySelector('.lm-cell svg').getBoundingClientRect();
+    const lmX = lm.left - cRect.left - 1;
+    // Keep both arrows on the upper/lower half of the LM glyph, but pull the
+    // unbiased one up enough that its curve doesn't dip into the "LM (policy)"
+    // label sitting below the icon.
+    const lmTopY = lm.top - cRect.top + lm.height * 0.18;
+    const lmBotY = lm.top - cRect.top + lm.height * 0.62;
+
+    const biasedCard   = document.querySelectorAll('.prompt-card')[0].getBoundingClientRect();
+    const unbiasedCard = document.querySelectorAll('.prompt-card')[1].getBoundingClientRect();
+
+    const cards = [
+      { rect: biasedCard,   color: RED,   endY: lmTopY },
+      { rect: unbiasedCard, color: GREEN, endY: lmBotY },
+    ];
+
+    cards.forEach(({ rect, color, endY }) => {
+      const x1 = rect.right - cRect.left;
+      const y1 = rect.top + rect.height / 2 - cRect.top;
+      // endTangentRatio 0.85 → arrow flattens out at the end so the arrowhead
+      // points more directly into the LM icon rather than glancing past it.
+      drawCurve(svg, x1, y1, lmX - 1, endY, color, 0.5, 0.85);
+    });
+  }
+
+  // Arrows: each bracket → corresponding rate box (black, no label).
+  function drawBracketToRateArrows(svg, cRect) {
+    const BLACK = '#1A1A1A';
+    const pairs = [
+      { bracketSel: '.group--biased .bracket-cell',
+        boxSel:     '.rate-box--biased',   color: BLACK },
+      { bracketSel: '.group--unbiased .bracket-cell',
+        boxSel:     '.rate-box--unbiased', color: BLACK },
+    ];
+    pairs.forEach(({ bracketSel, boxSel, color }) => {
+      const bracket = document.querySelector(bracketSel).getBoundingClientRect();
+      const box     = document.querySelector(boxSel).getBoundingClientRect();
+      const x1 = bracket.right - cRect.left;
+      const y1 = (bracket.top + bracket.bottom) / 2 - cRect.top;
+      const x2 = box.left - cRect.left - 2;
+      const y2 = (box.top + box.bottom) / 2 - cRect.top;
+      drawCurve(svg, x1, y1, x2, y2, color, 0.5, 0.6, 1.0);
+    });
+  }
+
+  // Arrows: only the FIRST occurrence of each equation variable gets an arrow
+  // to its rate box. The color match in the equation carries the link for
+  // duplicate occurrences (so the rightmost p_biased doesn't need its own
+  // swooping arrow back across the equation).
+  function drawEqVarArrows(svg, cRect) {
+    const seen = new Set();
+    document.querySelectorAll('.eq-var').forEach(varEl => {
+      const which = varEl.dataset.var;
+      if (seen.has(which)) return;
+      seen.add(which);
+
+      const boxSel = which === 'biased' ? '.rate-box--biased' : '.rate-box--unbiased';
+      const box = document.querySelector(boxSel);
+      if (!box) return;
+      const color = which === 'biased' ? RED : GREEN;
+
+      const vr = varEl.getBoundingClientRect();
+      const br = box.getBoundingClientRect();
+      // The equation sits between the boxes (biased above, unbiased below),
+      // so aim each arrow at the near edge: bottom of biased, top of unbiased.
+      const x1 = vr.left + vr.width / 2 - cRect.left;
+      const y1 = (which === 'biased' ? vr.top : vr.bottom) - cRect.top;
+      const x2 = br.left + br.width / 2 - cRect.left;
+      const y2 = (which === 'biased' ? br.bottom + 2 : br.top - 2) - cRect.top;
+      drawCurve(svg, x1, y1, x2, y2, color, 0.5, 0.9);
+    });
+  }
+
+  // Size each dashed bracket to hug its score boxes top-to-bottom.
+  function positionBrackets() {
+    document.querySelectorAll('.group').forEach(group => {
+      const scoreBoxes = group.querySelectorAll('.score-cell');
+      const bracket = group.querySelector('.bracket-cell');
+      if (!scoreBoxes.length || !bracket) return;
+      const groupRect = group.getBoundingClientRect();
+      const firstRect = scoreBoxes[0].getBoundingClientRect();
+      const lastRect = scoreBoxes[scoreBoxes.length - 1].getBoundingClientRect();
+      bracket.style.top = (firstRect.top - groupRect.top) + 'px';
+      bracket.style.height = (lastRect.bottom - firstRect.top) + 'px';
+    });
+  }
+
+  // Resize the push-arrow SVG so its stem spans the visual gap between the
+  // two rate boxes (anchored on the bracket positions, which fix where the
+  // boxes will sit after positionRateBoxes). Call BEFORE positionRateBoxes
+  // so the flow is stable when boxes get their translateY values.
+  function sizePushArrow() {
+    const svg = document.querySelector('.push-arrow svg');
+    const biasedBracket = document.querySelector('.group--biased .bracket-cell');
+    const unbiasedBracket = document.querySelector('.group--unbiased .bracket-cell');
+    const biasedBox = document.querySelector('.rate-box--biased');
+    if (!svg || !biasedBracket || !unbiasedBracket || !biasedBox) return;
+    const bb = biasedBracket.getBoundingClientRect();
+    const ub = unbiasedBracket.getBoundingClientRect();
+    const boxH = biasedBox.offsetHeight;
+    const biasedCenter = (bb.top + bb.bottom) / 2;
+    const unbiasedCenter = (ub.top + ub.bottom) / 2;
+    // After positionRateBoxes: biased box bottom = biasedCenter + boxH/2;
+    //                          unbiased box top  = unbiasedCenter - boxH/2.
+    const arrowH = Math.max(40, unbiasedCenter - biasedCenter - boxH);
+    svg.setAttribute('height', arrowH);
+    svg.setAttribute('viewBox', `0 0 14 ${arrowH}`);
+    svg.querySelector('line').setAttribute('y2', arrowH - 10);
+    svg.querySelector('polygon').setAttribute(
+      'points', `2,${arrowH - 10} 12,${arrowH - 10} 7,${arrowH - 1}`);
+  }
+
+  // Re-center the push-arrow between the visually translated rate boxes.
+  function positionPushArrow() {
+    const pushArrow = document.querySelector('.push-arrow');
+    const biasedBox = document.querySelector('.rate-box--biased');
+    const unbiasedBox = document.querySelector('.rate-box--unbiased');
+    if (!pushArrow || !biasedBox || !unbiasedBox) return;
+    pushArrow.style.transform = 'translateY(0)';
+    const arrowRect = pushArrow.getBoundingClientRect();
+    const biasedRect = biasedBox.getBoundingClientRect();
+    const unbiasedRect = unbiasedBox.getBoundingClientRect();
+    const targetCenter = (biasedRect.bottom + unbiasedRect.top) / 2;
+    const currentCenter = (arrowRect.top + arrowRect.bottom) / 2;
+    pushArrow.style.transform = `translateY(${targetCenter - currentCenter}px)`;
+  }
+
+  function layout() {
+    positionLM();
+    positionBrackets();
+    positionRateBoxes();
+    positionRewardEq();
+    positionPromptBlocks();
+    drawLMArrows();
+    drawFigureArrows();
+    sizePage();
+  }
+
+  // After everything is laid out, inject an @page rule sized exactly to the
+  // figure's bounding box so the print-to-PDF output has no extra whitespace.
+  function sizePage() {
+    const figure = document.querySelector('.figure');
+    if (!figure) return;
+    const rect = figure.getBoundingClientRect();
+    const w = Math.ceil(rect.width);
+    const h = Math.ceil(rect.height);
+    let styleEl = document.getElementById('page-size');
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = 'page-size';
+      document.head.appendChild(styleEl);
+    }
+    styleEl.textContent =
+      `@media print { @page { size: ${w}px ${h}px; margin: 0; } }`;
+  }
+
+  // Translate the reward-equation block so that the FORMULA line specifically
+  // is centered between the two (already-translated) rate boxes — keeps the
+  // title/caption flowing above/below.
+  function positionRewardEq() {
+    const eq = document.querySelector('.reward-eq');
+    const formula = document.querySelector('.reward-eq .formula');
+    const biasedBox = document.querySelector('.rate-box--biased');
+    const unbiasedBox = document.querySelector('.rate-box--unbiased');
+    if (!eq || !formula || !biasedBox || !unbiasedBox) return;
+    eq.style.transform = 'translateY(0)';
+    const formulaRect = formula.getBoundingClientRect();
+    const biasedRect = biasedBox.getBoundingClientRect();
+    const unbiasedRect = unbiasedBox.getBoundingClientRect();
+    const targetCenter = (biasedRect.bottom + unbiasedRect.top) / 2;
+    const currentCenter = (formulaRect.top + formulaRect.bottom) / 2;
+    eq.style.transform = `translateY(${targetCenter - currentCenter}px)`;
+  }
+  window.addEventListener('load', layout);
+  window.addEventListener('resize', layout);
+</script>
+
+</body>
+</html>

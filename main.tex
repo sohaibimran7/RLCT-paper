@@ -98,7 +98,7 @@ to align with users' views and preferences
 
 \begin{figure*}[t]
 \centering
-\includegraphics[trim={0cm, 5.25cm, 0cm, 0cm}, clip, width=\linewidth]{figures/RMCT Figure 1.pdf}
+\includegraphics[width=\linewidth]{figures/RMCT Figure 1.pdf}
 \caption{\textbf{Overview of Rate Matching Consistency
 Training (RMCT).} We sample multiple trajectories from the model
 under biased and unbiased prompts, score each trajectory with a
@@ -112,7 +112,7 @@ paraphrased for brevity.}
 \label{fig:RMCT}
 \end{figure*}
 
-One approach to mitigate the behavioural inconsistency driven by extraneous input features is to remove these features from the input or from the LLM's internal representations \citep{nguyen_probing_2025, hua2026steeringevaluationawarelanguagemodels}. However, isolating and removing such features in practice is difficult, since they can be encoded as latent information distributed across the text rather than localised in any removable sequence of tokens. LLMs are adept at extracting such features from incidental textual cues \citep{chen2024designing, needham_llms_2025} and interpretability tools cannot yet reliably remove them from internal representations. Another approach, and the focus of our work, is \textit{Consistency Training}: training LLMs to behave consistently regardless of whether such features are present.
+One approach to mitigate the behavioural inconsistency driven by extraneous input features is to remove these features from the input or from the LLM's internal representations \citep{nguyen_probing_2025, hua2026steeringevaluationawarelanguagemodels}. However, isolating and removing such features in practice is difficult, since they can be encoded as latent information distributed across the text rather than localised in any removable sequence of tokens. LLMs are adept at extracting such features from incidental textual cues \citep{chen2024designing, needham_llms_2025} and interpretability tools cannot yet reliably remove them from internal representations \citep{tan2024analyzing,read2026reproducing}. Another approach, and the focus of our work, is \textit{Consistency Training}: training LLMs to behave consistently regardless of whether such features are present.
 
 Existing consistency training methods, Bias-Augmented Consistency Training (BCT) \citep{chua_bias-augmented_2024} and Activation Consistency Training (ACT) \citep{irpan_consistency_2025}, train a model to produce either the same response (BCT) or the same internal representations (ACT) across paired inputs that differ in some feature. Both objectives therefore also constrain verbalisation of the feature, which can misgeneralise to \emph{obfuscation}: the model suppressing mention of the feature while remaining influenced by it. Such obfuscation undermines chain-of-thought monitoring, which is an important but fragile tool for AI safety \cite{korbak2025chain}. This would be particularly costly in settings where consistency training could be promising, such as prompt-injection robustness \citep{wallace_instruction_2024,anthropic_prompt_injection_2025} or evaluation gaming \citep{schoen_stress_2025}.
 
