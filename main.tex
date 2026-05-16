@@ -754,6 +754,6 @@ r^{\text{dist}}_{x,i} = \sum_{k=1}^{K} -(p_{x,k} - p_{\text{ref},k})\,(T_k(\tau_
 \end{equation}
 where $p_{x,k} = \frac{1}{N}\sum_i T_k(\tau_{x,i})$ is the empirical rate for value $t_k$. This is the policy-gradient estimator for the objective $\frac{1}{2}\sum_k (p_{x,k} - p_{\text{ref},k})^2$, i.e.\ the squared $\ell_2$ distance between the empirical distributions of $T$ on $x$ and on the reference. When $K=2$, the two indicators $T_1$ and $T_2 = 1 - T_1$ are redundant and the reward reduces to twice the binary RMCT reward.
 
-For continuous $T$, the same idea applies by replacing the sum over indicators with an expectation: one can apply the RMCT reward to any collection of binary thresholding functions $\mathbf{1}[T(\tau) \leq t]$, which correspond to matching the empirical CDFs of $T$ across inputs.
+For continuous $T$, the same idea applies by replacing the sum over discrete values with an integral over thresholds $t$: applying the RMCT reward to the binary thresholding functions $\mathbf{1}[T(\tau) \leq t]$ for all $t$ and integrating yields the objective $\frac{1}{2}\int(\hat{F}_x(t) - \hat{F}_{\text{ref}}(t))^2\,dt$ (the squared Cram\'{e}r distance between the empirical distributions), which enforces matching of the full empirical CDF.
 
 \end{document}
