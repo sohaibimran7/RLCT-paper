@@ -100,7 +100,7 @@ that should not, ideally, affect the behaviour of interest. A widely studied exa
 \caption{\textbf{Overview of Rate Matching Consistency
 Training (RMCT).} We sample multiple trajectories from the model
 under biased and unbiased prompts, score each trajectory with a
-binary classifier ($T$), and compute per-prompt behaviour
+binary classifier ($T(x, y)$), and compute per-prompt behaviour
 rates. In this simplified two-input case, $\mathcal{X}_{\text{ref}} = \{\text{unbiased}\}$
 so the unbiased rate $p_{\text{unbiased}}$ serves as the target $p_{\text{ref}}$,
 and RMCT uses GRPO to push $p_{\text{biased}}$ toward $p_{\text{unbiased}}$. Because the reward
@@ -128,9 +128,9 @@ These concerns motivate \emph{selective consistency training}: enforcing consist
 Consistency training is a class of methods that train an LLM policy $\pi_\theta$ to behave similarly across a set of related inputs $\mathcal{X}$. Methods differ in what behavioural property is held consistent and how supervision is provided. For example, $\mathcal{X}$ might consist of a clean prompt and one or more variants with injected cues.
 
 \paragraph{Bias-Augmented Consistency Training.}
-BCT \citep{chua_bias-augmented_2024} considers one input $x_0 \in \mathcal{X}$ as a reference (typically a clean prompt), samples a target response $\tau \sim \pi_{\theta_0}(\cdot \mid x_0)$ from the initial policy on this reference, and fine-tunes $\pi_\theta$ to produce $\tau$ on the remaining inputs $\mathcal{X} \setminus \{x_0\}$. BCT minimizes the loss function:
+BCT \citep{chua_bias-augmented_2024} considers one input $x_0 \in \mathcal{X}$ as a reference (typically a clean prompt), samples a target response $y \sim \pi_{\theta_0}(\cdot \mid x_0)$ from the initial policy on this reference, and fine-tunes $\pi_\theta$ to produce $y$ on the remaining inputs $\mathcal{X} \setminus \{x_0\}$. BCT minimizes the loss function:
 \begin{equation} \label{eq: BCT loss}
-\mathcal{L}_{\text{BCT}}(\theta) = -\sum_{x \in \mathcal{X} \setminus \{x_0\}} \log \pi_\theta(\tau \mid x)
+\mathcal{L}_{\text{BCT}}(\theta) = -\sum_{x \in \mathcal{X} \setminus \{x_0\}} \log \pi_\theta(y \mid x)
 \end{equation} 
 
 \paragraph{Activation Consistency Training.}
@@ -151,9 +151,9 @@ An LLM defines a distribution over responses. For a binary property of interest,
 Reinforcement learning is naturally suited to such rate-level objectives. RMCT samples $N$ trajectories per input, evaluate the property of interest on each, and turn the resulting per-input rates into a reward signal. Defining the reward at the output level — based only on the property of the final response, not on the chain of thought — mitigates the direct obfuscation pressure of process-level supervision \cite{baker2025monitoring}. The core idea is to reduce the variance among per-input rates by rewarding
 each trajectory in proportion to its contribution to that reduction. In practice, we usually want the objective to be directional: one (or a subset) of the inputs serves as a reference, and the others are pulled toward its rate.
 
-Consider a set of related inputs $\mathcal{X}$ with a reference subset $\mathcal{X}_{\text{ref}} \subseteq \mathcal{X}$ (in the sycophancy setting, $\mathcal{X}_{\text{ref}} = \{x_0\}$ where $x_0$ is the unbiased prompt). Let $\tau_{x,i}$ denote the $i$-th of $N$ trajectories sampled on $x$, and $T(\tau) \in \{0,1\}$ a binary classifier of the target behavioural property (e.g.\ ``the response matches the user's bias'').\footnote{When $T$ is not binary, matching rates matches only the mean of $T$ across inputs, leaving higher moments (e.g.\ variance) free to differ. Rate matching then extends naturally to \emph{distribution matching} — enforcing that the full distribution of $T$ is consistent across inputs; see Appendix~\ref{app:distribution-matching}.} The per-input behaviour rate is
+Consider a set of related inputs $\mathcal{X}$ with a reference subset $\mathcal{X}_{\text{ref}} \subseteq \mathcal{X}$ (in the sycophancy setting, $\mathcal{X}_{\text{ref}} = \{x_0\}$ where $x_0$ is the unbiased prompt). Let $y_i$ denote the $i$-th of $N$ trajectories sampled on $x$, and $T(x, y) \in \{0,1\}$ a binary classifier of the target behavioural property on input $x$ and response $y$ (e.g.\ ``the response matches the user's bias'').\footnote{When $T$ is not binary, matching rates matches only the mean of $T$ across inputs, leaving higher moments (e.g.\ variance) free to differ. Rate matching then extends naturally to \emph{distribution matching} — enforcing that the full distribution of $T$ is consistent across inputs; see Appendix~\ref{app:distribution-matching}.} The per-input behaviour rate is
 \begin{equation}
-p_x = \frac{1}{N} \sum_{i=1}^{N} T(\tau_{x,i})
+p_x = \frac{1}{N} \sum_{i=1}^{N} T(x, y_i)
 \end{equation}
 and the target rate is obtained by aggregating the reference rates with an aggregation function $Q$ (for example, the mean or the minimum):
 \begin{equation}
@@ -164,7 +164,7 @@ Each non-reference trajectory receives a consistency reward equal to its
 contribution to pulling its local rate $p_x$ toward the target rate
 $p_{\text{ref}}$:
 \begin{equation}
-r^{\text{cons}}_{x,i} = -(p_x - p_{\text{ref}})\,(T(\tau_{x,i}) - p_x)
+r^{\text{cons}}_{x,i} = -(p_x - p_{\text{ref}})\,(T(x, y_i) - p_x)
 \qquad x \in \mathcal{X} \setminus \mathcal{X}_{\text{ref}}
 \end{equation}
 An optional anchor reward to prevent the reference rates from drifting
@@ -212,7 +212,7 @@ consistency term through a mixing weight\footnote{Further, like BCT and unlike A
 \label{sec:experiments}
 
 \subsection{Dataset} \label{sec: dataset}
-We benchmark RMCT against BCT on the sycophancy dataset of \citet{chua_bias-augmented_2024}. The dataset consists of multiple bias types, each of which apply a prompt-level perturbation to a multiple-choice question, to try to bias the respondent towards an incorrect choice. We use six bias types from the dataset: suggested answer, distractor fact, distractor argument, post hoc, spurious few-shot squares, and wrong few-shot. Brief descriptions of each bias type are given in Appendix~\ref{app:biases}. Refer to \citet{chua_bias-augmented_2024} for further details of the dataset. 
+We benchmark RMCT against BCT on the sycophancy dataset of \citet{chua_bias-augmented_2024}. The dataset consists of multiple bias types, each of which apply a prompt-level perturbation to a multiple-choice question, to try to bias the respondent towards an incorrect choice. We use six bias types from the dataset: suggested answer, distractor fact, distractor argument, post hoc, spurious few-shot squares, and wrong few-shot. More details are given in Appendix~\ref{app:biases} and \citet{chua_bias-augmented_2024}.
 
 \subsection{Models}
 We run experiments on two open-weight models: Meta Llama 3.1 8B
@@ -235,8 +235,8 @@ Appendix~\ref{app:hyperparameters}.
 
 \subsection{Metrics}
 For each bias and evaluation question $x$ we sample one trajectory
-$\tau_b$ under the biased prompt and one trajectory $\tau_u$ under
-the unbiased prompt, and let $b(x) = T(\tau_b)$ and $u(x) = T(\tau_u)$,
+$y_b$ under the biased prompt and one trajectory $y_u$ under
+the unbiased prompt, and let $b(x) = T(x, y_b)$ and $u(x) = T(x, y_u)$,
 where $T$ classifies whether the response matches the bias. We
 report three per-question switch rates, each averaged over questions:
 %% Jannes: I think the arrow directions on $\text{BSR}_{\rightarrow}$ / $\text{BSR}_{\leftarrow}$ are backwards -- the towards-bias rate is $b - u$, so reading the arrow as "model moves toward bias" would suggest $\leftarrow$ (pulled toward the bias) rather than $\rightarrow$. Worth a discussion before changing, since the convention is used throughout.
@@ -330,19 +330,8 @@ Appendix~\ref{app:control-results}.}
 
 \section{Discussion} \label{sec: discussion}
 
-
-%% Jannes: the "without constraining other aspects" framing is a bit too strong -- soften.
-We introduced Rate Matching Consistency Training (RMCT), a
-reinforcement-learning method for selective consistency training that
-enforces consistency over selected behavioural properties while
-leaving the remaining output unconstrained. On the sycophancy
-benchmark of \citet{chua_bias-augmented_2024}, evaluated on Meta Llama
-3.1 8B Instruct and OpenAI GPT OSS 20B, RMCT matches BCT's held-out
-$\text{BSR}_{\rightarrow}$ reduction on Meta Llama 3.1 8B Instruct and
-exceeds it on OpenAI GPT OSS 20B, where BCT fails to generalise.
-Across both models, RMCT preserves BVR close to the base-model rate; BCT,
-by contrast, substantially reduces it on both the trained and the
-held-out biases.
+We discuss our results below, organised by metric, before turning to
+the data-efficiency versus compute trade-off and limitations.
 
 \paragraph{Towards Bias switch rate}
 RMCT reduces both models' $\text{BSR}_{\rightarrow}$ less than BCT on the training bias. Despite the smaller in-distribution reduction, RMCT matches BCT's
@@ -364,24 +353,6 @@ depends only on the per-input behaviour rates and so does not
 penalise bias verbalisation; the
 verbalisation rate accordingly remains close to the base model on
 the held-out average for both models.
-
-\paragraph{Methodological choices.}
-We use six of the bias types from \citet{chua_bias-augmented_2024}
-and exclude three. The ``Are you sure?'' and positional biases are
-scored by a procedure that differs from the per-question switch
-rate used in the present work, which would preclude a uniform
-interpretation of $\text{BSR}_{\rightarrow}$ and BVR across bias
-types; see \citet{chua_bias-augmented_2024} for details. Hindsight
-is supported only on a single source dataset that we did not adopt,
-since we wished to evaluate on a more recent and harder benchmark,
-namely HLE. For each method-model configuration we train at three
-learning rates and pool checkpoints across them when computing
-metrics; this forecloses learning-rate cherry-picking. Hyperparameter-tuning was employed to determine a suitable number of datapoints and batch sizes for BCT and RMCT, the
-inclusion of the instruction-following samples for BCT, and the number of trajectories per datapoint, and
-KL-penalty coefficient for RMCT. These
-tuning splits did not use the same training datasets and bias combinations as the main experiments, nor the same evaluation
-datasets. The post-hoc bias was
-excluded from the tuning evaluations.
 
 \paragraph{Data efficiency vs. compute.} RMCT extracts a learning
 signal from sample-level variation within each group of trajectories,
@@ -499,6 +470,13 @@ will pick the squared option on the test question.
 question, each labelled with a wrong answer rather than the correct
 one. The cue is the pattern of consistently incorrect labelling.
 
+\paragraph{Excluded biases.} We exclude the ``Are you sure?'' and
+positional biases, which are scored by a procedure that differs from
+the per-question switch rate used here and so would preclude a uniform
+interpretation of $\text{BSR}_{\rightarrow}$ and BVR across bias
+types, and hindsight, which is supported only on a single source
+dataset that we did not adopt in favour of the harder HLE benchmark.
+
 \section{Training hyperparameters}
 \label{app:hyperparameters}
 
@@ -531,6 +509,14 @@ we run three learning rates~$\{1.0,\,2.86,\,5.0\} \times 10^{-4}$ and
 pool checkpoints across them when computing metrics. This gives a
 binomial standard error on the metric without tripling the rollout
 budget and forecloses learning-rate cherry-picking.
+
+\paragraph{Tuning protocol.} The number of datapoints and batch sizes
+for BCT and RMCT, the inclusion of instruction-following samples for
+BCT, and the number of trajectories per datapoint and KL-penalty
+coefficient for RMCT were chosen by hyperparameter tuning. The tuning
+splits used different training datasets, bias combinations, and
+evaluation datasets from the main experiments, and excluded post-hoc
+from the tuning evaluations.
 
 \section{Control results}
 \label{app:control-results}
@@ -716,7 +702,7 @@ rate $p_x$ ($x \in \mathcal{X}_{\text{ref}}$) to its initial value $p^{(0)}_x$
 computed under the initial policy $\pi_{\theta_0}$ (a checkpoint taken before
 consistency training begins):
 \begin{equation}
-r^{\text{anchor}}_{x,i} = -(p_x - p^{(0)}_x)\,(T(\tau_{x,i}) - p_x)
+r^{\text{anchor}}_{x,i} = -(p_x - p^{(0)}_x)\,(T(x, y_i) - p_x)
 \qquad x \in \mathcal{X}_{\text{ref}}
 \end{equation}
 The baseline $p_x$ is the variance-optimal centring under the current
@@ -740,18 +726,18 @@ All experiments in this paper use $\alpha = 0$ (the consistency reward alone). T
 \section{Extension to distribution matching}
 \label{app:distribution-matching}
 
-When $T(\tau) \in \{0,1\}$, the distribution of $T$ under any policy is a Bernoulli parameterised entirely by the rate $p_x$, so matching rates across inputs is equivalent to matching distributions. For a non-binary $T$ — whether taking values in a finite set $\mathcal{T} = \{t_1, \ldots, t_K\}$ (e.g.\ a graded quality score) or in a continuous range (e.g.\ a scalar reward signal) — the marginal distribution has more degrees of freedom than its mean, and matching means no longer implies matching distributions.
+When $T(x, y) \in \{0,1\}$, the distribution of $T$ under any policy is a Bernoulli parameterised entirely by the rate $p_x$, so matching rates across inputs is equivalent to matching distributions. For a non-binary $T$ — whether taking values in a finite set $\mathcal{T} = \{t_1, \ldots, t_K\}$ (e.g.\ a graded quality score) or in a continuous range (e.g.\ a scalar reward signal) — the marginal distribution has more degrees of freedom than its mean, and matching means no longer implies matching distributions.
 
 The framework extends naturally to finite-valued $T$. Define a binary indicator for each value:
 \begin{equation}
-T_k(\tau) = \mathbf{1}[T(\tau) = t_k], \qquad k = 1, \ldots, K.
+T_k(x, y) = \mathbf{1}[T(x, y) = t_k], \qquad k = 1, \ldots, K.
 \end{equation}
 Each $T_k$ is a valid binary trait, so the RMCT reward can be applied to each independently and summed:
 \begin{equation}
-r^{\text{dist}}_{x,i} = \sum_{k=1}^{K} -(p_{x,k} - p_{\text{ref},k})\,(T_k(\tau_{x,i}) - p_{x,k}),
+r^{\text{dist}}_{x,i} = \sum_{k=1}^{K} -(p_{x,k} - p_{\text{ref},k})\,(T_k(x, y_i) - p_{x,k}),
 \end{equation}
-where $p_{x,k} = \frac{1}{N}\sum_i T_k(\tau_{x,i})$ is the empirical rate for value $t_k$. This is the policy-gradient estimator for the objective $\frac{1}{2}\sum_k (p_{x,k} - p_{\text{ref},k})^2$, i.e.\ the squared $\ell_2$ distance between the empirical distributions of $T$ on $x$ and on the reference. When $K=2$, the two indicators $T_1$ and $T_2 = 1 - T_1$ are redundant and the reward reduces to twice the binary RMCT reward.
+where $p_{x,k} = \frac{1}{N}\sum_i T_k(x, y_i)$ is the empirical rate for value $t_k$. This is the policy-gradient estimator for the objective $\frac{1}{2}\sum_k (p_{x,k} - p_{\text{ref},k})^2$, i.e.\ the squared $\ell_2$ distance between the empirical distributions of $T$ on $x$ and on the reference. When $K=2$, the two indicators $T_1$ and $T_2 = 1 - T_1$ are redundant and the reward reduces to twice the binary RMCT reward.
 
-For continuous $T$, the same idea applies by replacing the sum over discrete values with an integral over thresholds $t$: applying the RMCT reward to the binary thresholding functions $\mathbf{1}[T(\tau) \leq t]$ for all $t$ and integrating yields the objective $\frac{1}{2}\int(\hat{F}_x(t) - \hat{F}_{\text{ref}}(t))^2\,dt$ (the squared Cram\'{e}r distance between the empirical distributions), which enforces matching of the full empirical CDF.
+For continuous $T$, the same idea applies by replacing the sum over discrete values with an integral over thresholds $t$: applying the RMCT reward to the binary thresholding functions $\mathbf{1}[T(x, y) \leq t]$ for all $t$ and integrating yields the objective $\frac{1}{2}\int(\hat{F}_x(t) - \hat{F}_{\text{ref}}(t))^2\,dt$ (the squared Cram\'{e}r distance between the empirical distributions), which enforces matching of the full empirical CDF.
 
 \end{document}
