@@ -268,6 +268,7 @@ control sits close to base while BCT proper drops well below it. The smaller BVR
 \centering
 \includegraphics[width=\linewidth]{figures/main_pro_bsr.png}
 \caption{Towards-bias switch rate $\text{BSR}_{\rightarrow}$ on HLE.
+Lower is better.
 OpenAI GPT OSS 20B (top), Meta Llama 3.1 8B Instruct (bottom).
 Training bias (distractor argument) is shaded; the rightmost column
 averages over the five held-out bias types. Error bars are two
@@ -285,7 +286,8 @@ Appendix~\ref{app:control-results}.}
 \caption{Bias verbalisation rate (BVR) on HLE under the biased
 prompt, restricted to questions on which adding the bias switched the
 parsed answer toward the biased option (the subset on which the cue
-was operative). OpenAI GPT OSS 20B (top), Meta Llama 3.1 8B Instruct
+was operative). Higher is better. OpenAI GPT OSS 20B (top), Meta
+Llama 3.1 8B Instruct
 (bottom). Training bias (distractor argument) is shaded; the
 rightmost column averages over the five held-out bias types. Error
 bars are two binomial standard errors (approximate $95\%$ confidence
@@ -536,6 +538,7 @@ effect of the consistency objective.
 \caption{Bias verbalisation rate (BVR) on HLE under the biased
 prompt, restricted to questions on which adding the bias switched
 the parsed answer toward the biased option, with matched controls.
+Higher is better.
 OpenAI GPT OSS 20B (top), Meta Llama 3.1 8B Instruct (bottom).
 DA-only training. Training bias is shaded; the rightmost column
 averages over the held-out bias types. Outlined bars are the matched
@@ -572,6 +575,7 @@ of consistency.
 \includegraphics[width=\linewidth]{figures/da_pro_bsr.png}
 \caption{Towards-bias switch rate $\text{BSR}_{\rightarrow}$ on HLE
 under the DA-only training regime, with matched controls overlaid.
+Lower is better.
 OpenAI GPT OSS 20B (top), Meta Llama 3.1 8B Instruct (bottom).
 Training bias is shaded; the rightmost column averages over the
 held-out bias types. Outlined bars are the matched controls.
@@ -583,7 +587,8 @@ Significance markers (\textasteriskcentered{} $p<0.05$, \textasteriskcentered\te
 \centering
 \includegraphics[width=\linewidth]{figures/da_anti_bsr.png}
 \caption{Away-from-bias switch rate $\text{BSR}_{\leftarrow}$ on HLE
-under the DA-only training regime. OpenAI GPT OSS 20B (top), Meta
+under the DA-only training regime. Lower is better.
+OpenAI GPT OSS 20B (top), Meta
 Llama 3.1 8B Instruct (bottom). Training bias is shaded; the
 rightmost column averages over the held-out bias types. Outlined
 bars are the matched controls. Significance markers as in
@@ -597,7 +602,8 @@ three learning rates.}
 \centering
 \includegraphics[width=\linewidth]{figures/da_total_bsr.png}
 \caption{Total switch rate $\text{BSR}_{\text{tot}}$ on HLE under
-the DA-only training regime. OpenAI GPT OSS 20B (top), Meta Llama
+the DA-only training regime. Lower is better.
+OpenAI GPT OSS 20B (top), Meta Llama
 3.1 8B Instruct (bottom). Training bias is shaded; the rightmost
 column averages over the held-out bias types. Outlined bars are the
 matched controls. Significance markers as in
@@ -654,7 +660,8 @@ two methods.
 \centering
 \includegraphics[width=\linewidth]{figures/dawfs_pro_bsr.png}
 \caption{Towards-bias switch rate $\text{BSR}_{\rightarrow}$ on HLE
-under the DA+WFS training regime. OpenAI GPT OSS 20B (top), Meta
+under the DA+WFS training regime. Lower is better.
+OpenAI GPT OSS 20B (top), Meta
 Llama 3.1 8B Instruct (bottom). Training biases (distractor argument
 and wrong-few-shot) are shaded; the rightmost column averages over
 the held-out bias types. Outlined bars are the matched controls.
@@ -670,7 +677,7 @@ intervals), pooled across three learning rates.}
 \caption{Bias verbalisation rate (BVR) on HLE under the biased
 prompt, restricted to questions on which adding the bias switched
 the parsed answer toward the biased option, under the DA+WFS
-training regime. OpenAI GPT OSS 20B (top), Meta Llama 3.1 8B
+training regime. Higher is better. OpenAI GPT OSS 20B (top), Meta Llama 3.1 8B
 Instruct (bottom). Training biases are shaded; the rightmost column
 averages over the held-out bias types. Outlined bars are the matched
 controls. Significance markers as in Figure~\ref{fig:app-pro-bsr}.
