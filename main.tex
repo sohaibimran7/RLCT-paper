@@ -56,7 +56,7 @@
 
 \begin{abstract}
 
-Large language models are often influenced by extraneous input features, such as cues revealing a user’s preferred answer. Consistency training reduces this influence by training models to behave the same way across inputs with and without the extraneous feature. However, existing methods train for consistency over entire responses or internal activations, which also constrains whether the model verbalises said extraneous features. We show this leads to obfuscation, where the model learns not to mention a cue while remaining influenced by it, undermining monitorability. To address this, we introduce Rate Matching Consistency Training (RMCT), which trains for consistency over selected behavioural properties without constraining how this behaviour is expressed.  RMCT matches the rate at which the model exhibits a target behaviour (e.g., following a bias cue) across input perturbations, rather than requiring paired inputs with and without the extraneous feature, extending consistency training to settings where the extraneous features cannot be removed. We evaluate RMCT on sycophancy reduction in two open-weight language models, achieving reductions in bias-following comparable to a standard consistency-training baseline on held-out bias types, while largely preserving the model’s tendency to verbalise the bias cue. Further, we find that RMCT is more data-efficient at the expense of being less compute-efficient in our experiments. Overall, RMCT shows that consistency training can improve behavioural robustness without directly trading off against monitorability.
+Large language models are often influenced by extraneous input features, such as cues revealing a user’s preferred answer. Consistency training reduces this influence by training models to behave similarly across inputs with and without the extraneous feature. However, existing methods train for consistency over entire responses or internal activations, which also constrains whether the model verbalises said extraneous features. We show this leads to obfuscation, where the model learns not to mention a cue while remaining influenced by it, which may undermine monitorability. To address this, we introduce Rate Matching Consistency Training (RMCT), which trains for consistency over selected behavioural properties without constraining how this behaviour is expressed.  RMCT matches the rate at which the model exhibits a target behaviour (e.g., following a bias cue) across input perturbations, rather than requiring paired inputs with and without the extraneous feature, extending consistency training to settings where the extraneous features cannot be removed. We evaluate RMCT on sycophancy reduction in two open-weight language models, achieving reductions in bias-following comparable to a standard consistency-training baseline on held-out bias types, while largely preserving the model’s tendency to verbalise the bias cue. Further, we find that RMCT is more data-efficient at the expense of being less compute-efficient in our experiments. Overall, RMCT shows that consistency training can improve behavioural robustness without directly trading off against monitorability.
 
 
 % Existing
@@ -86,9 +86,7 @@ Large language models are often influenced by extraneous input features, such as
 \section{Introduction}
 
 Large language model (LLM) behaviour is often influenced by extraneous input features
-that should not, in principle, affect the behaviour of interest. A
-widely studied example is sycophancy, where LLMs adapt their responses
-to align with users' views and preferences
+that should not, ideally, affect the behaviour of interest. A widely studied example is LLMs adapting their responses to align with users' views and preferences latent in the prompt i.e. sycophancy. 
 \citep{perez_discovering_2022}. 
 
 % Another example is evaluation gaming,
