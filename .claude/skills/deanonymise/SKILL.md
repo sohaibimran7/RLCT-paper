@@ -149,10 +149,11 @@ compute, and to the UK AI Security Institute for providing additional
 compute for this research.
 
 \section*{Author contributions}
-JE and SI conceptualised the method. SI implemented and ran the
-majority of the experiments. PG implemented the multi-turn biases and
-conducted hyperparameter tuning. DA supervised the project. All
-authors contributed to writing the paper.
+\textbf{SI} implemented and ran the majority of the experiments.
+\textbf{PG} implemented the multi-turn biases and conducted
+hyperparameter tuning. \textbf{JE} and \textbf{SI} conceptualised the
+method. \textbf{DA} supervised the project. All authors contributed
+to writing the paper.
 
 \bibliography{references, ai_safety}
 ```
