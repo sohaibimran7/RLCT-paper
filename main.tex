@@ -218,10 +218,10 @@ $y_b$ under the biased prompt and one trajectory $y_u$ under
 the unbiased prompt, and let $b(x) = T(x, y_b)$ and $u(x) = T(x, y_u)$,
 where $T$ classifies whether the response matches the bias. We
 report three per-question switch rates:
-%% Jannes: I think the arrow directions on $\text{BSR}_{\rightarrow}$ / $\text{BSR}_{\leftarrow}$ are backwards -- the towards-bias rate is $b - u$, so reading the arrow as "model moves toward bias" would suggest $\leftarrow$ (pulled toward the bias) rather than $\rightarrow$. Worth a discussion before changing, since the convention is used throughout.
+%% Jannes: I think the arrow directions on $\text{BSR}_{\leftarrow}$ / $\text{BSR}_{\rightarrow}$ are backwards -- the towards-bias rate is $b - u$, so reading the arrow as "model moves toward bias" would suggest $\leftarrow$ (pulled toward the bias) rather than $\rightarrow$. Worth a discussion before changing, since the convention is used throughout.
 \begin{align*}
-\text{BSR}_{\rightarrow} &= \tfrac{1}{|X|}\textstyle\sum_x \max(0,\, b(x) - u(x)), \\
-\text{BSR}_{\leftarrow}  &= \tfrac{1}{|X|}\textstyle\sum_x \max(0,\, u(x) - b(x)), \\
+\text{BSR}_{\leftarrow} &= \tfrac{1}{|X|}\textstyle\sum_x \max(0,\, b(x) - u(x)), \\
+\text{BSR}_{\rightarrow}  &= \tfrac{1}{|X|}\textstyle\sum_x \max(0,\, u(x) - b(x)), \\
 \text{BSR}_{\text{tot}}  &= \tfrac{1}{|X|}\textstyle\sum_x |b(x) - u(x)|,
 \end{align*}
 which we call the \emph{towards-bias switch rate}, the
@@ -251,9 +251,9 @@ Appendix~\ref{app:control-results}.
 \label{sec:results}
 
 Figure~\ref{fig:main-pro-bsr} reports the towards-bias switch rate
-($\text{BSR}_{\rightarrow}$) on the evaluation dataset. On the training bias both tested methods significantly reduce
-$\text{BSR}_{\rightarrow}$ for both models, with BCT reducing it more
-than RMCT. However, BCT does not generalise to reducing the average $\text{BSR}_{\rightarrow}$ on the held-out biases for OpenAI GPT OSS 20B, primarily because it misgeneralises to significantly increasing $\text{BSR}_{\rightarrow}$ on the post-hoc bias, the only multi-turn bias in our dataset. RMCT, in contrast, generalises to reducing average $\text{BSR}_{\rightarrow}$ for GPT on the held-out biases. Both methods generalise to an equivalent significant reduction in average $\text{BSR}_{\rightarrow}$ on the held-out biases for Meta Llama 3.1 8B Instruct. 
+($\text{BSR}_{\leftarrow}$) on the evaluation dataset. On the training bias both tested methods significantly reduce
+$\text{BSR}_{\leftarrow}$ for both models, with BCT reducing it more
+than RMCT. However, BCT does not generalise to reducing the average $\text{BSR}_{\leftarrow}$ on the held-out biases for OpenAI GPT OSS 20B, primarily because it misgeneralises to significantly increasing $\text{BSR}_{\leftarrow}$ on the post-hoc bias, the only multi-turn bias in our dataset. RMCT, in contrast, generalises to reducing average $\text{BSR}_{\leftarrow}$ for GPT on the held-out biases. Both methods generalise to an equivalent significant reduction in average $\text{BSR}_{\leftarrow}$ on the held-out biases for Meta Llama 3.1 8B Instruct. 
 
 Figure~\ref{fig:main-bv} reports the bias verbalisation rate (BVR) restricted to questions on which adding the bias switched the answer toward the biased option. BCT substantially reduces verbalisation on the trained bias and on the held-out bias average for both models. RMCT, in contrast, does not significantly decrease BVR on any of the held-out biases, and instead significantly increases GPT's BVR on the spurious few-shot squares bias and the held-out average. RMCT does however significantly decrease GPT's BVR on the training bias. The control results (Appendix \ref{app:control-results}) show that BCT's BVR reduction is attributable to the consistency training objective rather than fine-tuning drift.
 
@@ -265,7 +265,7 @@ Figure~\ref{fig:main-bv} reports the bias verbalisation rate (BVR) restricted to
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/main_pro_bsr.png}
-\caption{Towards-bias switch rate $\text{BSR}_{\rightarrow}$ on HLE.
+\caption{Towards-bias switch rate $\text{BSR}_{\leftarrow}$ on HLE.
 Lower is better.
 OpenAI GPT OSS 20B (top), Meta Llama 3.1 8B Instruct (bottom).
 Training bias (distractor argument) is shaded; the rightmost column
@@ -303,7 +303,7 @@ We discuss our results below, organised by metric, before turning to
 the data-efficiency versus compute trade-off and limitations.
 
 \paragraph{Towards Bias switch rate}
-RMCT reduces both models' $\text{BSR}_{\rightarrow}$ less than BCT on the training bias. Despite the smaller in-distribution reduction, RMCT matches BCT in reducing LLama's $\text{BSR}_{\rightarrow}$ and exceeds it in reducing GPT's $\text{BSR}_{\rightarrow}$, where BCT's held-out average is statistically indistinguishable from the base rate. Therefore RMCT matches or exceeds BCT, the previously best performing consistency training method \citep{irpan_consistency_2025}, in reducing sycophancy in our experiments.
+RMCT reduces both models' $\text{BSR}_{\leftarrow}$ less than BCT on the training bias. Despite the smaller in-distribution reduction, RMCT matches BCT in reducing LLama's $\text{BSR}_{\leftarrow}$ and exceeds it in reducing GPT's $\text{BSR}_{\leftarrow}$, where BCT's held-out average is statistically indistinguishable from the base rate. Therefore RMCT matches or exceeds BCT, the previously best performing consistency training method \citep{irpan_consistency_2025}, in reducing sycophancy in our experiments.
 
 \paragraph{Bias Verbalisation}
 
@@ -321,18 +321,18 @@ verbalisation of the bias.  The BVR reduction on the held-out biases shows that 
 % without requiring a curated clean-prompt target response per training
 % example as BCT does. This can make RMCT more data-efficient than BCT
 % when target responses are expensive to produce or unavailable. 
-Hyperparameter tuning experiments show that BCT requires at least 2000 datapoints to significantly reduce $\text{BSR}_{\rightarrow}$, whereas RMCT significantly reduced $\text{BSR}_{\rightarrow}$ in as less as 64 datapoints. The tradeoff is compute: each training data-point requires sampling $|\mathcal{X}|\cdot N$ trajectories per update, making RMCT substantially more computationally heavy per datapoint than supervised BCT.
+Hyperparameter tuning experiments show that BCT requires at least 2000 datapoints to significantly reduce $\text{BSR}_{\leftarrow}$, whereas RMCT significantly reduced $\text{BSR}_{\leftarrow}$ in as less as 64 datapoints. The tradeoff is compute: each training data-point requires sampling $|\mathcal{X}|\cdot N$ trajectories per update, making RMCT substantially more computationally heavy per datapoint than supervised BCT.
 
 \paragraph{Limitations and future work.}
 
-The reductions in $\text{BSR}_{\rightarrow}$ that we obtain under BCT
+The reductions in $\text{BSR}_{\leftarrow}$ that we obtain under BCT
 are smaller than those reported by \citet{chua_bias-augmented_2024}.
 We attribute this to the difficulty gap between our
 training and evaluation distributions: the questions in our training data, drawn from LogiQA and HellaSwag, are significantly easier than the HLE questions that we use for our evaluations. Confirming this hypothesis
 would require either a direct replication of the original methodology or targeted ablations isolating the effects of evaluation difficulty, training-data difficulty, and the gap
 between the two; we leave these to future work.
 
-A limitation is that $\text{BSR}_{\rightarrow}$, $\text{BSR}_{\leftarrow}$, and
+A limitation is that $\text{BSR}_{\leftarrow}$, $\text{BSR}_{\rightarrow}$, and
 $\text{BSR}_{\text{tot}}$ measure changes in the parsed final answer
 between the biased and unbiased prompts, and so conflate two distinct
 mechanisms: an influence of the biasing text on the model's reasoning or
@@ -369,7 +369,7 @@ only over a designated behavioural property of the response and
 leaves the rest of the response, including the chain of thought,
 largely unconstrained. On the sycophancy benchmark of
 \citet{chua_bias-augmented_2024}, RMCT matches BCT's held-out
-$\text{BSR}_{\rightarrow}$ reduction on Meta Llama 3.1 8B Instruct
+$\text{BSR}_{\leftarrow}$ reduction on Meta Llama 3.1 8B Instruct
 and exceeds it on OpenAI GPT OSS 20B, where BCT fails to generalise.
 On both tested models, RMCT preserves the rate at which the model verbalises the bias close to the base-model rate;
 BCT, by contrast, substantially suppresses bias verbalisation on both
@@ -442,7 +442,7 @@ one. The cue is the pattern of consistent incorrect labelling.
 \paragraph{Excluded biases.} We exclude the ``Are you sure?'' and
 positional biases, which are scored by a procedure that differs from
 the per-question switch rate used here and so would preclude a uniform
-interpretation of $\text{BSR}_{\rightarrow}$ and BVR across bias
+interpretation of $\text{BSR}_{\leftarrow}$ and BVR across bias
 types, and hindsight, which is supported only on a single source
 dataset that we did not adopt in favour of the harder HLE benchmark.
 
@@ -505,12 +505,13 @@ The controls also disentangle the BVR effects on the
 towards-bias-switch subset (Figure~\ref{fig:app-bv-controls}). The
 BCT control preserves BVR close to the base rate while BCT proper
 collapses it, so the BVR reduction under BCT is attributable to the
-consistency objective rather than to fine-tuning drift. The RMCT
-control raises BVR on the held-out biases by a similar amount to
-RMCT proper, indicating that the small BVR increase observed under
-RMCT (most visibly on Meta Llama 3.1 8B Instruct) reflects
-fine-tuning drift rather than an active verbalisation-promoting
-effect of the consistency objective.
+consistency objective rather than to fine-tuning drift. 
+% The RMCT
+% control raises BVR on the held-out biases by a similar amount to
+% RMCT proper, indicating that the small BVR increase observed under
+% RMCT (most visibly on Meta Llama 3.1 8B Instruct) reflects
+% fine-tuning drift rather than an active verbalisation-promoting
+% effect of the consistency objective.
 
 \begin{figure*}[t]
 \centering
@@ -537,23 +538,18 @@ towards-bias rate in the main text. Results for the DA+WFS training
 regime are reported in Appendix~\ref{app:da-wfs}.
 
 Figure~\ref{fig:app-pro-bsr} reproduces the main-text
-$\text{BSR}_{\rightarrow}$ plot with the matched controls overlaid;
+$\text{BSR}_{\leftarrow}$ plot with the matched controls overlaid;
 Figures~\ref{fig:app-anti-bsr} and \ref{fig:app-total-bsr} report
-$\text{BSR}_{\leftarrow}$ and $\text{BSR}_{\text{tot}}$. For both
+$\text{BSR}_{\rightarrow}$ and $\text{BSR}_{\text{tot}}$. For both
 models the away-from-bias rate is small relative to the
 towards-bias rate, so the total switch rate is dominated by
 towards-bias switching and Figure~\ref{fig:app-total-bsr} largely
-tracks Figure~\ref{fig:app-pro-bsr}. One pattern is worth flagging:
-on Meta Llama 3.1 8B Instruct, BCT raises
-$\text{BSR}_{\leftarrow}$ on the trained DA bias well above base,
-more than RMCT. This is consistent with BCT training a directional
-response -- always pick the unbiased answer -- rather than a property
-of consistency.
+tracks Figure~\ref{fig:app-pro-bsr}.
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/da_pro_bsr.png}
-\caption{Towards-bias switch rate $\text{BSR}_{\rightarrow}$ on HLE
+\caption{Towards-bias switch rate $\text{BSR}_{\leftarrow}$ on HLE
 under the DA-only training regime, with matched controls overlaid.
 Lower is better.
 OpenAI GPT OSS 20B (top), Meta Llama 3.1 8B Instruct (bottom).
@@ -566,7 +562,7 @@ Significance markers (\textasteriskcentered{} $p<0.05$, \textasteriskcentered\te
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/da_anti_bsr.png}
-\caption{Away-from-bias switch rate $\text{BSR}_{\leftarrow}$ on HLE
+\caption{Away-from-bias switch rate $\text{BSR}_{\rightarrow}$ on HLE
 under the DA-only training regime. Lower is better.
 OpenAI GPT OSS 20B (top), Meta
 Llama 3.1 8B Instruct (bottom). Training bias is shaded; the
@@ -630,16 +626,16 @@ DA-only setup with both bias types sampled in the prompt mix.
 
 Figures~\ref{fig:app-dawfs-pro-bsr} and \ref{fig:app-dawfs-bv} are
 the DA+WFS analogues of the main-text Figures~\ref{fig:main-pro-bsr}
-and \ref{fig:main-bv}. The qualitative picture matches the DA-only
+and \ref{fig:main-bv}. The qualitative picture is similar to the DA-only
 regime: BCT substantially reduces BVR on its trained biases and on
-the held-out average while RMCT preserves it, and the held-out
-$\text{BSR}_{\rightarrow}$ reductions are comparable between the
+the held-out average while RMCT leads to a much smaller reduction, and the held-out
+$\text{BSR}_{\leftarrow}$ reductions are comparable between the
 two methods.
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/dawfs_pro_bsr.png}
-\caption{Towards-bias switch rate $\text{BSR}_{\rightarrow}$ on HLE
+\caption{Towards-bias switch rate $\text{BSR}_{\leftarrow}$ on HLE
 under the DA+WFS training regime. Lower is better.
 OpenAI GPT OSS 20B (top), Meta
 Llama 3.1 8B Instruct (bottom). Training biases (distractor argument
@@ -678,9 +674,10 @@ consistency training begins):
 r^{\text{anchor}}_{x,i} = -(p_x - p^{(0)}_x)\,(T(x, y_i) - p_x)
 \qquad x \in \mathcal{X}_{\text{ref}}
 \end{equation}
-The baseline $p_x$ is the variance-optimal centring under the current
-sampling distribution; $p^{(0)}_x$ comes from a frozen policy and
-would not yield an unbiased baseline. Anchoring each $p_x$ individually
+% The baseline $p_x$ is the variance-optimal centring under the current
+% sampling distribution; $p^{(0)}_x$ comes from a frozen policy and
+% would not yield an unbiased baseline.
+Anchoring each $p_x$ individually
 keeps $p^{(0)}_{\text{ref}} = Q(\{p^{(0)}_x\}_{x \in \mathcal{X}_{\text{ref}}})$
 stable under any choice of aggregator $Q$.
 
