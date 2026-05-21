@@ -481,10 +481,9 @@ budget and forecloses learning-rate cherry-picking.
 \paragraph{Tuning protocol.} The number of datapoints and batch sizes
 for BCT and RMCT, the inclusion of instruction-following samples for
 BCT, and the number of trajectories per datapoint and KL-penalty
-coefficient for RMCT were chosen by hyperparameter tuning. The tuning
-splits used different training datasets, bias combinations, and
-evaluation datasets from the main experiments, and excluded post-hoc
-from the tuning evaluations.
+coefficient for RMCT were chosen by hyperparameter tuning. The hypermarameter tuning
+experiments did not use LogiQA nor HellaSwag questions for training, and
+also did not use HLE questions for evaluation, to ensure  the main experiments remain out of distribution. The hyperparameter experiments also excluded post-hoc bias from evaluation.
 
 \section{Control results}
 \label{app:control-results}
